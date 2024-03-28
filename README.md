@@ -1,2 +1,3 @@
 # litecode
-C++ implementation of the Tree-Walk Interpreter inspired by Crafting Interpreters by Robert Nystrom
+C++ implementation of the Tree-Walk Interpreter inspired by <a href="https://craftinginterpreters.com">Crafting Interpreters</a> by **Robert Nystrom**
+
