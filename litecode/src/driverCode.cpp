@@ -3,9 +3,9 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-#include "Token.cpp"
-
 #include <stdexcept>
+#include "TypesAndData/Token.cpp"
+
 namespace toylang {
 
     static bool hadError = false;
@@ -83,8 +83,8 @@ namespace toylang {
 
             void run(const std::string& inputSource) {
                 std::istringstream sourceStream(inputSource);
-                Scanner x;
-                std::vector<Token> tokens = scanner.scanTokens();
+                Scanner scanner;
+                std::vector<toylang::Token> tokens = scanner.scanTokens();
 
                 for(const auto& token : tokens) {
                     std::cout << token << std::endl;
