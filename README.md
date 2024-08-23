@@ -1,5 +1,5 @@
 # litecode
-C++ implementation of the Tree-Walk Interpreter inspired by <a href="https://craftinginterpreters.com">Crafting Interpreters</a> by **Robert Nystrom**
+C++ implementation of the Tree-Walk Interpreter inspired by the book <a href="https://craftinginterpreters.com">Crafting Interpreters</a> by **Robert Nystrom**.
 
 ## Crafting Interpreters Book
 "Crafting Interpreters" is a book written by Robert Nystrom that explores the development of interpreters for programming languages. The book is divided into two parts: the first part focuses on building a simple interpreter for a toy programming language called "Lox," while the second part delves into more advanced topics such as bytecode, optimization, and garbage collection.
