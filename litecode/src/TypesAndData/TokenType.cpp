@@ -17,7 +17,7 @@ namespace toylang {
         IF, NILL, OR, PRINT, RETURN, SUPRER,
         THIS, TRUE, VAR, WHILE, 
 
-        END_OF_FILE
+        EOF
 
     };
 }
