@@ -1,3 +1,7 @@
+// TokenType.cpp
+#ifndef TOKENTYPE_H
+#define TOKENTYPE_H
+
 namespace toylang {
         enum class TokenType {
         
@@ -14,10 +18,12 @@ namespace toylang {
 
         // Keywords.
         AND, CLASS, ELSE, FALSE, FUN, FOR,
-        IF, NILL, OR, PRINT, RETURN, SUPRER,
+        IF, NILL, OR, PRINT, RETURN, SUPER,
         THIS, TRUE, VAR, WHILE, 
 
-        EOF
+        END_OF_FILE
 
     };
 }
+
+#endif

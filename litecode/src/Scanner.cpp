@@ -1,5 +1,6 @@
-#include "TypesAndData/TokenType.cpp"
-#include "TypesAndData/Token.cpp"
+#ifndef SCANNER_H
+#define SCANNER_H
+#include <unordered_map>
 
 namespace toylang {
     class Scanner {
@@ -11,11 +12,11 @@ namespace toylang {
                 while(!isAtEnd()) {
                     start = current;
                     Token token = scanToken();
-                    if(token.type != TokenType::EOF) {
+                    if(token.getType() != TokenType::END_OF_FILE) {
                         tokens.push_back(token);
                     }
                 }
-                tokens.push_back(Token(TokenType::EOF, "", "", line));
+                tokens.push_back(Token(TokenType::END_OF_FILE, "", "", line));
 
                 return tokens;
             }
@@ -112,7 +113,7 @@ namespace toylang {
                         if(std::isalpha(c) || c == '_')
                             return identifier();
                         std::cerr << "Unexpected character: " << c << '\n';
-                        return makeToken(TokenType::EOF);
+                        return makeToken(TokenType::END_OF_FILE);
                 }
             }
 
@@ -130,7 +131,7 @@ namespace toylang {
                 }
                 if(isAtEnd()) {
                     std::cerr << "Unexpected string!\n";
-                    return makeToken(TokenType::EOF);
+                    return makeToken(TokenType::END_OF_FILE);
                 }
                 advance();
                 return makeToken(TokenType::STRING, source.substr(start+1, current - start - 2));
@@ -145,7 +146,7 @@ namespace toylang {
                 return makeToken(type);
             }
 
-            Toke makeToken(TokenType type, const std::string& literal = "") {
+            Token makeToken(TokenType type, const std::string& literal = "") {
                 return Token(type, source.substr(start, current - start), literal, line);
             }
 
@@ -159,5 +160,7 @@ namespace toylang {
         {"print", TokenType::PRINT}, {"super", TokenType::SUPER}, {"return", TokenType::RETURN},
         {"this", TokenType::THIS}, {"var", TokenType::VAR}, {"true", TokenType::TRUE},
         {"while", TokenType::WHILE}
-    }
+    };
 }
+
+#endif

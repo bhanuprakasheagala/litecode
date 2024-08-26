@@ -4,7 +4,10 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <vector>
+#include "TypesAndData/TokenType.cpp"
 #include "TypesAndData/Token.cpp"
+#include "Scanner.cpp"
 
 namespace toylang {
 
@@ -15,12 +18,12 @@ namespace toylang {
             litecode(int argc, char* argv[]) : argc(argc), argv(argv){}
             void start() {
                 try{
-                    if(argc > 1){
+                    if(argc > 2){
                         std::cout << "Usage: toyl [script]" << std::endl;
                         exit(64); /*For exit codes, I’m using the conventions defined in the UNIX “sysexits.h” header*/
                     }
-                    else if(argc == 1) {
-                        runFile(argv[0]);
+                    else if(argc == 2) {
+                        runFile(argv[1]);
                     }
                     else{
                         runPrompt();
@@ -82,9 +85,9 @@ namespace toylang {
             }
 
             void run(const std::string& inputSource) {
-                std::istringstream sourceStream(inputSource);
-                Scanner scanner;
-                std::vector<toylang::Token> tokens = scanner.scanTokens();
+                //std::istringstream sourceStream(inputSource);
+                Scanner scanner(inputSource);
+                std::vector<Token> tokens = scanner.scanTokens();
 
                 for(const auto& token : tokens) {
                     std::cout << token << std::endl;
