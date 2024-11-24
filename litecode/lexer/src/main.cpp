@@ -5,8 +5,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <vector>
-#include "inc/Scanner.hpp"
-#include "inc/ErrorReporter.hpp"
+#include "Scanner.hpp"
+#include "ErrorReporter.hpp"
 
 namespace lexer {
 
@@ -84,7 +84,6 @@ namespace lexer {
             }
 
             void run(const std::string& inputSource) {
-                //std::istringstream sourceStream(inputSource);
                 Scanner scanner(inputSource);
                 std::vector<Token> tokens = scanner.scanTokens();
 

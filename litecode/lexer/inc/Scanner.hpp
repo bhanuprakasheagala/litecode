@@ -1,46 +1,49 @@
 #ifndef SCANNER_HPP
 #define SCANNER_HPP
 
-#include "Token.hpp"
-#include "ErrorReporter.hpp"
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include "Token.hpp"
+#include "TokenType.hpp"
 
-namespace lexer{
+namespace lexer {
+
     class Scanner {
     public:
+        // Constructor
         explicit Scanner(const std::string& source);
-        std::vector<Token> scanTokens(); // Scans and returns all tokens from the source code
-    
+
+        // Scans all tokens and returns them
+        std::vector<Token> scanTokens();
+
     private:
-        // The source string being scanned
+        // Source code to scan
         std::string source;
-        
-        // Current scanning state
+
+        // Current state in the scanner
         size_t start, current;
         int line;
 
-        // Helpers for scanning tokens
-        char advance();         //   Advances and returns the next character
-        char peek() const;      //   Peeks at the current character without consuming it
-        char peekNext() const;  //   Peeks at the next character without consuming it
+        // Helper methods
+        char advance();
+        char peek() const;
+        char peekNext() const;
+        bool match(char expected);
+        bool isAtEnd() const;
+        void skipWhitespace();
 
-        bool isAtEnd() const;       // Checks if we have reached the end of the source
-        bool match(char expected);   // Matches the current character with the expected one
-
-        void skipWhitespace();      // Skips whitespace and comment
-
-        // Token creating and recognition
+        // Scans a single token
         Token scanToken();
-        Token makeToken(TokenType type, const std::string& literal = "");
-        Token stringLiteral();
-        Token numberLiteral();
+        Token number();
+        Token string();
         Token identifier();
+        Token makeToken(TokenType type, const std::string& literal = "");
 
         // Keywords map
         static const std::unordered_map<std::string, TokenType> Keywords;
     };
-}
 
-#endif
+} // namespace lexer
+
+#endif // SCANNER_HPP
