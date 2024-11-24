@@ -1,8 +1,7 @@
-#ifndef SCANNER_H
-#define SCANNER_H
+#include "inc/Scanner.hpp"
 #include <unordered_map>
 
-namespace toylang {
+namespace lexer {
     class Scanner {
         public:
             Scanner(const std::string& source) : source(source), start(0), current(0), line(1) {}
@@ -162,5 +161,3 @@ namespace toylang {
         {"while", TokenType::WHILE}
     };
 }
-
-#endif

@@ -1,8 +1,10 @@
-#ifndef TOKEN_H
-#define TOKEN_H
+#ifndef TOKEN_HPP
+#define TOKEN_HPP
 
-namespace toylang{
-    
+#include "TokenType.hpp"
+#include <iostream>
+#include <string>
+namespace lexer {  
     class Token {
         public:
             Token(TokenType type, const std::string& lexeme, const std::string& literal, int line)

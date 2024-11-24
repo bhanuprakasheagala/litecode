@@ -5,11 +5,10 @@
 #include <sstream>
 #include <stdexcept>
 #include <vector>
-#include "TypesAndData/TokenType.cpp"
-#include "TypesAndData/Token.cpp"
-#include "Scanner.cpp"
+#include "inc/Scanner.hpp"
+#include "inc/ErrorReporter.hpp"
 
-namespace toylang {
+namespace lexer {
 
     static bool hadError = false;
 
@@ -105,7 +104,7 @@ namespace toylang {
 
 
 int main(int argc, char* argv[]) {
-    toylang::litecode lc(argc, argv);
+    lexer::litecode lc(argc, argv);
     lc.start();
 
     return 0;
