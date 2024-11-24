@@ -25,18 +25,25 @@ This lexer supports:
 - **Interactive and Script Mode**: Supports both REPL (interactive mode) and executing from a script file.
 
 ## Directory Structure
-
 ```
 lox-lexer/
-│
-├── TypesAndData/
-│   ├── TokenType.cpp         # Defines the TokenType enum
-│   ├── Token.cpp             # Defines the Token class
-│
-├── Scanner.cpp               # Implementation of the Scanner class
-├── main.cpp                  # Entry point for the lexer
-│
-└── README.md                 # This file
+├── include/             # All header files
+│   ├── Scanner.hpp
+│   ├── Token.hpp
+│   ├── TokenType.hpp
+│   ├── ErrorReporter.hpp
+├── src/                 # All source files
+│   ├── main.cpp
+│   ├── Scanner.cpp
+│   ├── Token.cpp
+│   ├── ErrorReporter.cpp
+├── tests/               # Unit tests
+│   ├── ScannerTests.cpp
+│   ├── TokenTests.cpp
+├── tools/               # Optional tools (e.g., benchmarking, script examples)
+│   ├── example_script.lox
+├── CMakeLists.txt       # CMake build file
+└── README.md            # Project overview and documentation
 ```
 
 ## Setup and Installation
