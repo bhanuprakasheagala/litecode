@@ -1,4 +1,4 @@
-# litecode Lexer
+# litecode lexer
 
 This is the **lexer** module for the **litecode** interpreter, a toy programming language. The lexer (also known as the **scanner**) is responsible for breaking down source code into a sequence of **tokens**, which can then be processed further by the parser and interpreter in later phases of the project.
 
@@ -82,14 +82,17 @@ The lexer module is designed to be built and tested independently. To build and 
 
 ### Sample Run
 
-g++ --std=c++17 -Ilexer/inc -Ilexer/src lexer/src/main.cpp lexer/src/Scanner.cpp -o toylang
+g++ --std=c++17 -Ilexer/inc -Ilexer/src lexer/src/main.cpp lexer/src/Scanner.cpp -o toylang <br/>
 ./toylang
 
-> var x = 10
-[VAR] Lexeme: "var" Literal: "" Line: 1
-[IDENTIFIER] Lexeme: " x" Literal: "" Line: 1
-[EQUAL] Lexeme: " =" Literal: "" Line: 1
-[NUMBER] Lexeme: " 10" Literal: " 10" Line: 1
-[END_OF_FILE] Lexeme: "" Literal: "" Line: 1
+Input: <br/>
+> var x = 10 <br/>
+
+Output: <br/>
+[VAR] Lexeme: "var" Literal: "" Line: 1 <br/>
+[IDENTIFIER] Lexeme: " x" Literal: "" Line: 1 <br/>
+[EQUAL] Lexeme: " =" Literal: "" Line: 1 <br/>
+[NUMBER] Lexeme: " 10" Literal: " 10" Line: 1 <br/>
+[END_OF_FILE] Lexeme: "" Literal: "" Line: 1 <br/>
 
 >
