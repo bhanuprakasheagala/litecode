@@ -1,4 +1,4 @@
-# litecode Lexer (Phase 1)
+# litecode Lexer
 
 This is the **lexer** module for the **litecode** interpreter, a toy programming language. The lexer (also known as the **scanner**) is responsible for breaking down source code into a sequence of **tokens**, which can then be processed further by the parser and interpreter in later phases of the project.
 
@@ -16,7 +16,7 @@ lexer/
 ├── src/                # Source files for the lexer
 │   ├── main.cpp        # Main program to test the lexer
 │   ├── Scanner.cpp     # Lexer implementation
-└── CMakeLists.txt      # Build configuration for the lexer module
+
 ```
 
 - **`lexer/inc/`**: Contains the header files for the lexer, including error reporting, token definitions, and scanner interface.
@@ -78,66 +78,18 @@ The lexer module is designed to be built and tested independently. To build and 
 
 ### Prerequisites
 
-- C++14 or higher.
-- CMake 3.x or higher.
+- C++17 or higher.
 
-### Steps:
+### Sample Run
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/litecode.git
-   cd litecode
-   ```
+g++ --std=c++17 -Ilexer/inc -Ilexer/src lexer/src/main.cpp lexer/src/Scanner.cpp -o toylang
+./toylang
 
-2. Create a `build` directory:
-   ```bash
-   mkdir build
-   cd build
-   ```
+> var x = 10
+[VAR] Lexeme: "var" Literal: "" Line: 1
+[IDENTIFIER] Lexeme: " x" Literal: "" Line: 1
+[EQUAL] Lexeme: " =" Literal: "" Line: 1
+[NUMBER] Lexeme: " 10" Literal: " 10" Line: 1
+[END_OF_FILE] Lexeme: "" Literal: "" Line: 1
 
-3. Run CMake to configure the project:
-   ```bash
-   cmake ..
-   ```
-
-4. Build the project:
-   ```bash
-   make
-   ```
-
-5. Run the lexer:
-   - To run the lexer with a script file (e.g., `script.lox`):
-     ```bash
-     ./litecode script.lox
-     ```
-
-   - To run the lexer interactively (if no script is provided):
-     ```bash
-     ./litecode
-     ```
-
-   The lexer will output a list of tokens identified from the input source code.
-
-## Example Usage
-
-### Example 1: Running a Script
-
-If you have a script file `example.lox`, you can run it like this:
-
-```bash
-./litecode example.lox
-```
-
-This will print a sequence of tokens identified by the lexer from the script.
-
-### Example 2: Interactive Mode
-
-If you don't provide a file, the lexer will start an interactive prompt where you can input litecode code:
-
-```bash
-./litecode
-> var x = 10;
-> print x;
-```
-
-The lexer will print the tokens as it processes the input.
+>
