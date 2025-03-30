@@ -5,6 +5,7 @@ namespace lexer {
 
     // Represents the different types of tokens in the language
     enum class TokenType {
+        
         // Single character tokens
         LEFT_PARENTH,   // (
         RIGHT_PARENTH,  // )

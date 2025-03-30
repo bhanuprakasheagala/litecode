@@ -14,18 +14,29 @@ namespace lexer {
 
     class litecode{
         public:
-            litecode(int argc, char* argv[]) : argc(argc), argv(argv){}
+            litecode(int argc, char* argv[]) : argc(argc), argv(argv){
+                std::cout << "Litecode Interpreter" << std::endl;
+                std::cout << "Author: Bhanuprakash Eagala" << std::endl;
+                std::cout << "----------------------------------------" << std::endl;
+                std::cout << "----------------------------------------" << std::endl;
+                std::cout << "Litecode Interpreter started..." << std::endl;
+                std::cout << "----------------------------------------" << std::endl;
+                std::cout << "----------------------------------------" << std::endl;
+            }
+            ~litecode(){
+                std::cout << "Exiting Litecode Interpreter" << std::endl;
+            }
             void start() {
                 try{
                     if(argc > 2){
                         std::cout << "Usage: toyl [script]" << std::endl;
-                        exit(64); /*For exit codes, I’m using the conventions defined in the UNIX “sysexits.h” header*/
+                        exit(64); /* For exit codes, I’m using the conventions defined in the UNIX “sysexits.h” header */
                     }
                     else if(argc == 2) {
-                        runFile(argv[1]);
+                        runFile(argv[1]); // File mode
                     }
                     else{
-                        runPrompt();
+                        runPrompt(); // Interactive mode
                     }
                 }
                 catch(const std::exception& e){
