@@ -14,15 +14,7 @@ namespace lexer {
 
     class litecode{
         public:
-            litecode(int argc, char* argv[]) : argc(argc), argv(argv){
-                std::cout << "Litecode Interpreter" << std::endl;
-                std::cout << "Author: Bhanuprakash Eagala" << std::endl;
-                std::cout << "----------------------------------------" << std::endl;
-                std::cout << "----------------------------------------" << std::endl;
-                std::cout << "Litecode Interpreter started..." << std::endl;
-                std::cout << "----------------------------------------" << std::endl;
-                std::cout << "----------------------------------------" << std::endl;
-            }
+            litecode(int argc, char* argv[]) : argc(argc), argv(argv){}
             ~litecode(){
                 std::cout << "Exiting Litecode Interpreter" << std::endl;
             }
