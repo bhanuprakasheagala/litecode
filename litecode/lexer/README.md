@@ -72,6 +72,269 @@ The `Scanner` class is the core of the lexer. It processes the input source code
 
 If an invalid character is encountered, the lexer reports an error with the line number and the unexpected character. This allows for quick identification of mistakes in the source code during the lexing phase.
 
+## UML diagrams for Lexer
+
+### Class Diagrams
+```plaintext
++-------------------+
+|    litecode       |
++-------------------+
+| - argc: int       |
+| - argv: char**    |
+| - hadError: bool  |
++-------------------+
+| + litecode(argc, argv) |
+| + ~litecode()          |
+| + start(): void        |
+| - runFile(path: string): void |
+| - runPrompt(): void    |
+| - run(inputSource: string): void |
+| - error(line: int, message: string): void |
+| - report(line: int, where: string, message: string): void |
++-------------------+
+
++-------------------+
+|    Scanner        |
++-------------------+
+| - source: string  |
+| - tokens: vector<Token> |
+| - start: int      |
+| - current: int    |
+| - line: int       |
++-------------------+
+| + Scanner(source: string) |
+| + scanTokens(): vector<Token> |
+| - scanToken(): void        |
+| - skipWhitespace(): void   |
+| - number(): Token          |
+| - string(): Token          |
+| - identifier(): Token      |
+| - match(expected: char): bool |
+| - advance(): char          |
+| - peek(): char             |
+| - peekNext(): char         |
+| - isAtEnd(): bool          |
++-------------------+
+
++-------------------+
+|      Token        |
++-------------------+
+| - type: TokenType |
+| - lexeme: string  |
+| - literal: string |
+| - line: int       |
++-------------------+
+| + Token(type: TokenType, lexeme: string, literal: string, line: int) |
+| + getType(): TokenType |
+| + toString(): string   |
++-------------------+
+
++-------------------+
+|  ErrorReporter    |
++-------------------+
+| - hadError: bool  |
++-------------------+
+| + report(line: int, where: string, message: string): void |
+| + hadError(): bool |
+| + reset(): void    |
++-------------------+
+```
+
+### Sequence diagram (File mode)
+```plaintext
+main() -> litecode::start()
+    litecode::start() -> litecode::runFile(path)
+        litecode::runFile() -> litecode::run(content)
+            litecode::run() -> Scanner::scanTokens()
+                Scanner::scanTokens() -> Token Stream
+            litecode::run() -> Print Tokens
+```
+
+### Sequence diagram (Interactive mode)
+```plaintext
+main() -> litecode::start()
+    litecode::start() -> litecode::runPrompt()
+        litecode::runPrompt() -> litecode::run(inputLine)
+            litecode::run() -> Scanner::scanTokens()
+                Scanner::scanTokens() -> Token Stream
+            litecode::run() -> Print Tokens
+```
+
+### Activity Diagram
+```plaintext
++-------------------+
+|       Start       |
++-------------------+
+         |
+         v
++-------------------+
+|  main()           |
++-------------------+
+         |
+         v
++-------------------+
+| litecode::start() |
++-------------------+
+         |
+         +-----------------------------+
+         |                             |
++-------------------+         +-------------------+
+| runFile(path)     |         | runPrompt()       |
++-------------------+         +-------------------+
+         |                             |
+         v                             v
++-------------------+         +-------------------+
+| run(content)      |         | run(inputLine)    |
++-------------------+         +-------------------+
+         |                             |
+         v                             v
++-------------------+         +-------------------+
+| scanTokens()      |         | scanTokens()      |
++-------------------+         +-------------------+
+         |                             |
+         v                             v
++-------------------+         +-------------------+
+| Print Tokens      |         | Print Tokens      |
++-------------------+         +-------------------+
+         |
+         v
++-------------------+
+|       End         |
++-------------------+
+```
+
+### Component diagram
+```plaintext
++-------------------+
+|     main.cpp      |
++-------------------+
+         |
+         v
++-------------------+
+| litecode Class    |
++-------------------+
+         |
+         v
++-------------------+
+| Scanner Class     |
++-------------------+
+         |
+         v
++-------------------+
+| Token Class       |
++-------------------+
+         |
+         v
++-------------------+
+| ErrorReporter     |
++-------------------+
+```
+
+---
+
+### **Step-by-Step Explanation**
+
+#### **1. `main()`**
+- **Input:** Command-line arguments (`argc`, `argv`).
+  - Example: `./litecode script.lc` or litecode (no arguments for REPL).
+- **Process:**
+  - Creates an instance of the litecode class.
+  - Calls `litecode::start()` to begin execution.
+- **Output:** None (delegates control to `start()`).
+
+---
+
+#### **2. `litecode::start()`**
+- **Input:** Command-line arguments (`argc`, `argv`).
+  - Example 1: `argc = 2, argv[1] = "script.lc"` (file mode).
+  - Example 2: `argc = 1` (interactive mode).
+- **Process:**
+  - If `argc > 2`, prints usage instructions and exits.
+  - If `argc == 2`, calls `runFile()` with the file path.
+  - If `argc == 1`, calls `runPrompt()` for interactive mode.
+- **Output:** None (delegates control to `runFile()` or `runPrompt()`).
+
+---
+
+#### **3. `litecode::runFile(path)`**
+- **Input:** File path (`path`).
+  - Example: `"script.lc"`.
+- **Process:**
+  - Opens the file and reads its content into a string.
+  - Calls `run(content)` with the file content.
+- **Output:** None (delegates control to `run()`).
+
+---
+
+#### **4. `litecode::runPrompt()`**
+- **Input:** User input from the console (`inputLine`).
+  - Example: `"> print 42;"`.
+- **Process:**
+  - Continuously prompts the user for input.
+  - Calls `run(inputLine)` for each non-empty line.
+  - Resets the `hadError` flag after each line.
+- **Output:** None (delegates control to `run()`).
+
+---
+
+#### **5. `litecode::run(inputSource)`**
+- **Input:** Source code as a string (`inputSource`).
+  - Example: `"print 42;"` (from file or user input).
+- **Process:**
+  - Creates a `Scanner` instance with the source code.
+  - Calls `Scanner::scanTokens()` to tokenize the input.
+  - Iterates through the tokens and prints them.
+- **Output:** Prints tokens to the console.
+
+---
+
+#### **6. `Scanner::scanTokens()`**
+- **Input:** Source code as a string (`source`).
+  - Example: `"print 42;"`.
+- **Process:**
+  - Tokenizes the source code into a list of `Token` objects.
+  - Adds an `END_OF_FILE` token at the end.
+- **Output:** A vector of `Token` objects.
+  - Example: `[Token(PRINT, "print"), Token(NUMBER, "42"), Token(SEMICOLON, ";"), Token(END_OF_FILE, "")]`.
+
+---
+
+#### **7. Token Stream**
+- **Input:** Vector of `Token` objects.
+  - Example: `[Token(PRINT, "print"), Token(NUMBER, "42"), Token(SEMICOLON, ";"), Token(END_OF_FILE, "")]`.
+- **Process:**
+  - Iterates through the tokens and prints them to the console.
+- **Output:** Printed tokens.
+  - Example:
+    ```plaintext
+    PRINT print
+    NUMBER 42
+    SEMICOLON ;
+    END_OF_FILE 
+    ```
+
+---
+
+### **Example Execution**
+
+#### **File Mode**
+1. Command: `./litecode script.lc`
+2. File `script.lc` contains:
+   ```plaintext
+   print 42;
+   ```
+3. Execution Flow:
+   - `main()` → `start()` → `runFile("script.lc")` → `run("print 42;")` → `scanTokens()` → Print tokens.
+
+#### **Interactive Mode**
+1. Command: litecode
+2. User Input:
+   ```plaintext
+   > print 42;
+   ```
+3. Execution Flow:
+   - `main()` → `start()` → `runPrompt()` → `run("print 42;")` → `scanTokens()` → Print tokens.
+
 ## Building and Testing the Lexer
 
 The lexer module is designed to be built and tested independently. To build and run the lexer, follow these steps:
@@ -82,17 +345,60 @@ The lexer module is designed to be built and tested independently. To build and 
 
 ### Sample Run
 
-g++ --std=c++17 -Ilexer/inc -Ilexer/src lexer/src/main.cpp lexer/src/Scanner.cpp -o toylang <br/>
-./toylang
+cd litecode/lexer <br/>
+g++ --std=c++17 -I lexer/inc lexer/src/main.cpp lexer/src/Scanner.cpp -o toylang <br/>
 
-Input: <br/>
-> var x = 10 <br/>
+#### Interactive mode
+$ ./toylang <br/>
 
-Output: <br/>
+**Input**: <br/>
+
+```
+> var x = 10
+```
+
+**Output**: <br/>
 [VAR] Lexeme: "var" Literal: "" Line: 1 <br/>
 [IDENTIFIER] Lexeme: " x" Literal: "" Line: 1 <br/>
 [EQUAL] Lexeme: " =" Literal: "" Line: 1 <br/>
 [NUMBER] Lexeme: " 10" Literal: " 10" Line: 1 <br/>
 [END_OF_FILE] Lexeme: "" Literal: "" Line: 1 <br/>
-
 >
+
+<br/>
+
+#### File mode
+./toylang    <path/to/the/file> <br/>
+
+**Input**: <br/>
+
+```
+$ ./toylang lexer/tests/LoxSample1.lox
+```
+
+**Output**: <br/>
+[VAR] Lexeme: "var" Literal: "" Line: 1 <br/>
+[IDENTIFIER] Lexeme: "a" Literal: "" Line: 1 <br/>
+[EQUAL] Lexeme: "=" Literal: "" Line: 1<br/>
+[NUMBER] Lexeme: "1" Literal: " 1" Line: 1<br/>
+[SEMICOLON] Lexeme: ";" Literal: "" Line: 1<br/>
+[IDENTIFIER] Lexeme: "while" Literal: "" Line: 2<br/>
+[LEFT_PARENTH] Lexeme: "(" Literal: "" Line: 2<br/>
+[IDENTIFIER] Lexeme: "a" Literal: "" Line: 2<br/>
+[LESS] Lexeme: "<" Literal: "" Line: 2<br/>
+[NUMBER] Lexeme: "10" Literal: " 10" Line: 2<br/>
+[RIGHT_PARENTH] Lexeme: ")" Literal: "" Line: 2<br/>
+[LEFT_BRACE] Lexeme: "{" Literal: "" Line: 2<br/>
+[IDENTIFIER] Lexeme: "print" Literal: "" Line: 3<br/>
+[IDENTIFIER] Lexeme: "a" Literal: "" Line: 3<br/>
+[SEMICOLON] Lexeme: ";" Literal: "" Line: 3<br/>
+[IDENTIFIER] Lexeme: "a" Literal: "" Line: 4<br/>
+[EQUAL] Lexeme: "=" Literal: "" Line: 4<br/>
+[IDENTIFIER] Lexeme: "a" Literal: "" Line: 4<br/>
+[PLUS] Lexeme: "+" Literal: "" Line: 4<br/>
+[NUMBER] Lexeme: "1" Literal: " 1" Line: 4<br/>
+[SEMICOLON] Lexeme: ";" Literal: "" Line: 4<br/>
+[RIGHT_BRACE] Lexeme: "}" Literal: "" Line: 5<br/>
+[END_OF_FILE] Lexeme: "" Literal: "" Line: 5<br/>
+
+
