@@ -15,9 +15,7 @@ namespace lexer {
     class litecode{
         public:
             litecode(int argc, char* argv[]) : argc(argc), argv(argv){}
-            ~litecode(){
-                std::cout << "Exiting Litecode Interpreter" << std::endl;
-            }
+            ~litecode(){}
             void start() {
                 try{
                     if(argc > 2){
