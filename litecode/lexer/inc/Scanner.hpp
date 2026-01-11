@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <optional>
 #include "Token.hpp"
 #include "TokenType.hpp"
 
@@ -21,11 +22,11 @@ namespace lexer {
         // Source code to scan
         std::string source;
 
-        // Current state in the scanner
+        // Current scanning state
         size_t start, current;
         int line;
 
-        // Helper methods
+        // Core helpers
         char advance();
         char peek() const;
         char peekNext() const;
@@ -33,11 +34,13 @@ namespace lexer {
         bool isAtEnd() const;
         void skipWhitespace();
 
-        // Scans a single token
-        Token scanToken();
-        Token number();
-        Token string();
-        Token identifier();
+        // Scans a single token, returns nullopt on error or comment
+        std::optional<Token> scanToken();
+        std::optional<Token> number();
+        std::optional<Token> string();
+        std::optional<Token> identifier();
+
+        // Constructs a token
         Token makeToken(TokenType type, const std::string& literal = "");
 
         // Keywords map
