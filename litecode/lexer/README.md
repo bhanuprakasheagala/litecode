@@ -358,12 +358,14 @@ $ ./toylang <br/>
 ```
 
 **Output**: <br/>
-[VAR] Lexeme: "var" Literal: "" Line: 1 <br/>
-[IDENTIFIER] Lexeme: " x" Literal: "" Line: 1 <br/>
-[EQUAL] Lexeme: " =" Literal: "" Line: 1 <br/>
-[NUMBER] Lexeme: " 10" Literal: " 10" Line: 1 <br/>
-[END_OF_FILE] Lexeme: "" Literal: "" Line: 1 <br/>
+```
+[VAR] Lexeme: "var" Literal: "" Line: 1
+[IDENTIFIER] Lexeme: "x" Literal: "" Line: 1
+[EQUAL] Lexeme: "=" Literal: "" Line: 1
+[NUMBER] Lexeme: "10" Literal: "10" Line: 1
+[END_OF_FILE] Lexeme: "" Literal: "" Line: 1
 >
+```
 
 <br/>
 
@@ -377,28 +379,30 @@ $ ./toylang lexer/tests/LoxSample1.lox
 ```
 
 **Output**: <br/>
-[VAR] Lexeme: "var" Literal: "" Line: 1 <br/>
-[IDENTIFIER] Lexeme: "a" Literal: "" Line: 1 <br/>
-[EQUAL] Lexeme: "=" Literal: "" Line: 1<br/>
-[NUMBER] Lexeme: "1" Literal: " 1" Line: 1<br/>
-[SEMICOLON] Lexeme: ";" Literal: "" Line: 1<br/>
-[IDENTIFIER] Lexeme: "while" Literal: "" Line: 2<br/>
-[LEFT_PARENTH] Lexeme: "(" Literal: "" Line: 2<br/>
-[IDENTIFIER] Lexeme: "a" Literal: "" Line: 2<br/>
-[LESS] Lexeme: "<" Literal: "" Line: 2<br/>
-[NUMBER] Lexeme: "10" Literal: " 10" Line: 2<br/>
-[RIGHT_PARENTH] Lexeme: ")" Literal: "" Line: 2<br/>
-[LEFT_BRACE] Lexeme: "{" Literal: "" Line: 2<br/>
-[IDENTIFIER] Lexeme: "print" Literal: "" Line: 3<br/>
-[IDENTIFIER] Lexeme: "a" Literal: "" Line: 3<br/>
-[SEMICOLON] Lexeme: ";" Literal: "" Line: 3<br/>
-[IDENTIFIER] Lexeme: "a" Literal: "" Line: 4<br/>
-[EQUAL] Lexeme: "=" Literal: "" Line: 4<br/>
-[IDENTIFIER] Lexeme: "a" Literal: "" Line: 4<br/>
-[PLUS] Lexeme: "+" Literal: "" Line: 4<br/>
-[NUMBER] Lexeme: "1" Literal: " 1" Line: 4<br/>
-[SEMICOLON] Lexeme: ";" Literal: "" Line: 4<br/>
-[RIGHT_BRACE] Lexeme: "}" Literal: "" Line: 5<br/>
-[END_OF_FILE] Lexeme: "" Literal: "" Line: 5<br/>
+```
+[VAR] Lexeme: "var" Literal: "" Line: 1
+[IDENTIFIER] Lexeme: "a" Literal: "" Line: 1
+[EQUAL] Lexeme: "=" Literal: "" Line: 1
+[NUMBER] Lexeme: "1" Literal: "1" Line: 1
+[SEMICOLON] Lexeme: ";" Literal: "" Line: 1
+[IDENTIFIER] Lexeme: "while" Literal: "" Line: 2
+[LEFT_PARENTH] Lexeme: "(" Literal: "" Line: 2
+[IDENTIFIER] Lexeme: "a" Literal: "" Line: 2
+[LESS] Lexeme: "<" Literal: "" Line: 2
+[NUMBER] Lexeme: "10" Literal: "10" Line: 2
+[RIGHT_PARENTH] Lexeme: ")" Literal: "" Line: 2
+[LEFT_BRACE] Lexeme: "{" Literal: "" Line: 2
+[IDENTIFIER] Lexeme: "print" Literal: "" Line: 3
+[IDENTIFIER] Lexeme: "a" Literal: "" Line: 3
+[SEMICOLON] Lexeme: ";" Literal: "" Line: 3
+[IDENTIFIER] Lexeme: "a" Literal: "" Line: 4
+[EQUAL] Lexeme: "=" Literal: "" Line: 4
+[IDENTIFIER] Lexeme: "a" Literal: "" Line: 4
+[PLUS] Lexeme: "+" Literal: "" Line: 4
+[NUMBER] Lexeme: "1" Literal: "1" Line: 4
+[SEMICOLON] Lexeme: ";" Literal: "" Line: 4
+[RIGHT_BRACE] Lexeme: "}" Literal: "" Line: 5
+[END_OF_FILE] Lexeme: "" Literal: "" Line: 5
+```
 
 
