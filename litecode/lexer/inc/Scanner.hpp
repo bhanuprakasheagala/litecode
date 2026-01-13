@@ -36,9 +36,9 @@ namespace lexer {
 
         // Scans a single token, returns nullopt on error or comment
         std::optional<Token> scanToken();
-        std::optional<Token> number();
+        Token number();
+        Token identifier();
         std::optional<Token> string();
-        std::optional<Token> identifier();
 
         // Constructs a token
         Token makeToken(TokenType type, const std::string& literal = "");
