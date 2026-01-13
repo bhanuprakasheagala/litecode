@@ -113,7 +113,7 @@ namespace lexer {
                 return std::nullopt;
         }
     }
-    std::optional<Token> Scanner::number() {
+    Token Scanner::number() {
         size_t literalStart = current - 1; // first digit was already consumed
         while (std::isdigit(peek()))
             advance();
@@ -137,7 +137,7 @@ namespace lexer {
         std::string literal = source.substr(literalStart, current - literalStart - 1);
         return makeToken(TokenType::STRING, literal);
     }
-    std::optional<Token> Scanner::identifier() {
+    Token Scanner::identifier() {
         while (std::isalnum(peek()) || peek() == '_') advance();
         std::string text = source.substr(start, current - start);
         TokenType type = Keywords.count(text) ? Keywords.at(text) : TokenType::IDENTIFIER;
