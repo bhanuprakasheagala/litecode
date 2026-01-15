@@ -11,6 +11,9 @@ namespace lexer {
             : type(type), lexeme(lexeme), literal(literal), line(line) {}
 
             TokenType getType() const { return type; }
+            int getLine() const { return line; }
+            const std::string& getLexeme() const { return lexeme; }
+            const std::string& getLiteral() const { return literal; }
 
             friend std::ostream& operator<<(std::ostream& os, const Token& token) {
                 os << "[" << toString(token.type) << "] "
