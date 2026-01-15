@@ -4,6 +4,7 @@
 #include "TokenType.hpp"
 #include <iostream>
 #include <string>
+#include <algorithm>
 namespace lexer {  
     class Token {
         public:
