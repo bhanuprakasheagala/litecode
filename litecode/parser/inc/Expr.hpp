@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <variant>
+#include <string>
 #include "lexer/inc/Token.hpp"
 
 namespace parser {
@@ -44,6 +45,21 @@ namespace parser {
 
         explicit Grouping(ExprPtr expression)
             : expression(std::move(expression)) {}
+    };
+
+    struct Variable : Expr {
+        lexer::Token name;
+
+        explicit Variable(lexer::Token name)
+            : name(std::move(name)) {}
+    };
+
+    struct Assign : Expr {
+        lexer::Token name;
+        ExprPtr value;
+
+        Assign(lexer::Token name, ExprPtr value)
+            : name(std::move(name)), value(std::move(value)) {}
     };
 
 } // namespace parser

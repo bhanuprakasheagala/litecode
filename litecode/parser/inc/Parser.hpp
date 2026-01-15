@@ -42,6 +42,7 @@ namespace parser {
 
         // Error handling
         void synchronize();
+        void error(const lexer::Token& token, const std::string& message) const;
     };
 
 } // namespace parser
