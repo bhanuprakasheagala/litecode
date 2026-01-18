@@ -4,7 +4,7 @@
 #include <memory>
 #include <variant>
 #include <string>
-#include "lexer/inc/Token.hpp"
+#include "Token.hpp"
 
 namespace parser {
 

@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 #include <initializer_list>
-#include "lexer/inc/Token.hpp"
+#include "Token.hpp"
 #include "Expr.hpp"
 
 namespace parser {
@@ -38,7 +38,7 @@ namespace parser {
         const lexer::Token& peek() const;
         const lexer::Token& previous() const;
 
-        const lexer::Token& consume(lexer::TokenType type, const char* message);
+        // const lexer::Token& consume(lexer::TokenType type, const char* message);
 
         // Error handling
         void synchronize();
