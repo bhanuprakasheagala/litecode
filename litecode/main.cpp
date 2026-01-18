@@ -5,8 +5,10 @@
 #include <sstream>
 #include <stdexcept>
 #include <vector>
-#include "Scanner.hpp"
-#include "ErrorReporter.hpp"
+#include "lexer/inc/Scanner.hpp"
+#include "lexer/inc/ErrorReporter.hpp"
+#include "parser/inc/Parser.hpp"
+#include "parser/inc/AstPrinter.hpp"
 
 namespace lexer {
 
@@ -85,13 +87,26 @@ namespace lexer {
             }
 
             void run(const std::string& inputSource) {
+                // 1. Lexing
                 Scanner scanner(inputSource);
                 std::vector<Token> tokens = scanner.scanTokens();
 
-                for(const auto& token : tokens) {
+                // Optional: keep token dump for now
+                for (const auto& token : tokens) {
                     std::cout << token << std::endl;
                 }
+
+                // 2. Parsing (expression only)
+                parser::Parser parser(tokens);
+                parser::ExprPtr expr = parser.parse();
+
+                if (!expr) return;
+
+                // 3. AST Printing
+                parser::AstPrinter printer;
+                std::cout << printer.print(*expr) << std::endl;
             }
+
             static void error(int line, std::string message) {
                 report(line, " ", message);
             }
