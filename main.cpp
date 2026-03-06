@@ -9,6 +9,8 @@
 #include "lexer/inc/ErrorReporter.hpp"
 #include "parser/inc/Parser.hpp"
 #include "parser/inc/AstPrinter.hpp"
+#include "interpreter/inc/Interpreter.hpp"
+#include "resolver/inc/Resolver.hpp"
 
 namespace lexer {
 
@@ -39,12 +41,15 @@ namespace lexer {
         private:
             int argc;
             char** argv;
+            interpreter::Interpreter interpreter;
+            std::vector<std::vector<parser::StmtPtr>> programBatches;
 
             void runFile(const std::string& path) {
                 try {
                     std::ifstream file(path, std::ios::binary);
                     if(!file.is_open()) {
-                        throw std::ios_base::failure("Unable to open file..\n");
+                        std::cerr << "Error: Unable to open file: " << path << std::endl;
+                        exit(66);
                     }
                     std::stringstream buffer;
                     buffer << file.rdbuf();
@@ -57,6 +62,7 @@ namespace lexer {
                 }
                 catch(const std::exception& e) {
                     std::cerr << "Error: " << e.what() << std::endl;
+                    exit(66);
                 }
             }
 
@@ -87,33 +93,63 @@ namespace lexer {
             }
 
             void run(const std::string& inputSource) {
+                ErrorReporter::reset();
+
                 // 1. Lexing
                 Scanner scanner(inputSource);
                 std::vector<Token> tokens = scanner.scanTokens();
-
-                // Optional: keep token dump for now
-                for (const auto& token : tokens) {
-                    std::cout << token << std::endl;
+                if (ErrorReporter::hadError()) {
+                    hadError = true;
+                    return;
                 }
 
-                // 2. Parsing (expression only)
+                // Optional debug dump controlled by environment variable.
+                const char* dumpEnv = std::getenv("LITECODE_DUMP_TOKENS");
+                const bool dumpTokens = dumpEnv != nullptr && std::string(dumpEnv) != "0";
+                if (dumpTokens) {
+                    for (const auto& token : tokens) {
+                        std::cout << token << std::endl;
+                    }
+                }
+
+                // 2. Parsing (program: declarations + statements)
                 parser::Parser parser(tokens);
-                parser::ExprPtr expr = parser.parse();
+                std::vector<parser::StmtPtr> statements = parser.parse();
+                if (parser.hadError()) {
+                    hadError = true;
+                    return;
+                }
 
-                if (!expr) return;
+                // Keep AST batches alive across REPL iterations so function/method
+                // declarations can safely retain pointers into statement trees.
+                programBatches.push_back(std::move(statements));
+                auto& currentBatch = programBatches.back();
 
-                // 3. AST Printing
-                parser::AstPrinter printer;
-                std::cout << printer.print(*expr) << std::endl;
+                // Optional AST dump controlled by environment variable.
+                const char* dumpAstEnv = std::getenv("LITECODE_DUMP_AST");
+                const bool dumpAst = dumpAstEnv != nullptr && std::string(dumpAstEnv) != "0";
+                if (dumpAst) {
+                    parser::AstPrinter printer;
+                    std::string output = printer.printProgram(currentBatch);
+                    if (!output.empty()) {
+                        std::cout << output << std::endl;
+                    }
+                }
+
+                // 3. Resolution + interpretation
+                resolver::Resolver resolver(interpreter);
+                resolver.resolve(currentBatch);
+                if (resolver.hadError()) {
+                    hadError = true;
+                    return;
+                }
+
+                interpreter.interpret(currentBatch);
+                if (interpreter.hadRuntimeError()) {
+                    hadError = true;
+                }
             }
 
-            static void error(int line, std::string message) {
-                report(line, " ", message);
-            }
-            static void report(int line, std::string where, std::string message) {
-                std::cout << "[line " << line << " ] Error " << where << ": " << message;
-                hadError = true;
-            }
     };
 }
 
