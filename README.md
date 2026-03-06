@@ -1,24 +1,195 @@
-# litecode
-C++ implementation of the Tree-Walk Interpreter inspired by the book <a href="https://craftinginterpreters.com">Crafting Interpreters</a> by **Robert Nystrom**.
+# Litecode
 
-## Crafting Interpreters Book
-"Crafting Interpreters" is a book written by Robert Nystrom that explores the development of interpreters for programming languages. The book is divided into two parts: the first part focuses on building a simple interpreter for a toy programming language called "Lox," while the second part delves into more advanced topics such as bytecode, optimization, and garbage collection.
+Litecode is a from-scratch interpreter project inspired by [Crafting Interpreters](https://craftinginterpreters.com/) by Robert Nystrom.
 
-Throughout the book, Nystrom takes a hands-on approach, guiding readers through the process of designing and implementing an interpreter from scratch. He covers fundamental concepts such as lexical analysis, parsing, abstract syntax trees, and semantic analysis, gradually building up to more complex topics.
+Current implementation is a **C++17 tree-walk interpreter** with scanner, parser, resolver, and runtime fully connected. The long-term goal is to continue into a **C-based bytecode VM path**.
 
-One of the notable features of "Crafting Interpreters" is its use of Java for implementation, making it accessible to readers with a basic understanding of the language. However, the principles discussed in the book are applicable to a wide range of programming languages and platforms.
+This root README is the **high-level guide** for the entire project.
+Detailed deep-dives are split into per-module READMEs.
 
-## Why to Write the same in C++
-This is an attempt to write the same using C++ language, optimizing as much as possible. So, why rewrite it in C++? Simply put, it's for learning and fun! While the original book provides a fantastic foundation in interpreter construction using Java, embarking on a rewrite in C++ offers several advantages:
+---
 
-**Learning Opportunity:** Working on the same project in a different language is an excellent way to deepen my understanding of both the project itself and the basic concepts behind the programming language implementation. And to gain insights into language-specific features, idioms, and performance considerations.
+## What This Project Is
 
-**Exploration of Language Differences:** C++ and Java have distinct characteristics, paradigms, and performance profiles. By porting the project to C++, I'll definitely encounter unique challenges and opportunities for optimization and efficiency that may not have been present in the Java version.
+Litecode is a learning-focused language implementation project that helps you understand:
+- lexical analysis (scanner)
+- parsing and AST construction
+- static scope resolution
+- runtime interpretation
+- functions, closures, classes, inheritance
 
-**Having Fun!!:** Let's face it—programming is about more than just building practical applications. It's about the joy of creation, the thrill of problem-solving, and the satisfaction of seeing your ideas come to life. Rewriting "Crafting Interpreters" in C++ is an exciting endeavor that promises to be both educational and enjoyable.
+If you are a beginner, this repo is meant to be read layer-by-layer.
 
-I'm deeply passionate about coding and building projects at System level programming. It's not just about learning; it's about having a blast while delving into the world of technology. Every project is a thrilling adventure where I get to experiment, learn, and push the boundaries of my learning capabilities.
+---
 
+## Documentation Map
 
+Read in this order:
 
+1. **Project overview (this file)**
+2. [Lexer Deep Dive](lexer/README.md)
+3. [Parser + AST Deep Dive](parser/README.md)
+4. [Resolver Deep Dive](resolver/README.md)
+5. [Interpreter Runtime Deep Dive](interpreter/README.md)
+6. [Testing Guide](tests/README.md)
+7. [Current status snapshot](docs/PROJECT_STATUS.md)
 
+---
+
+## High-Level Architecture
+
+```mermaid
+flowchart TD
+  A["Source (.lox)"] --> B["Scanner / Lexer"]
+  B --> C["Token stream"]
+  C --> D["Parser"]
+  D --> E["AST (Expr + Stmt)"]
+  E --> F["Resolver (scope binding)"]
+  F --> G["Interpreter (tree-walk runtime)"]
+  G --> H["stdout / stderr / exit code"]
+```
+
+Core execution order in `main.cpp`:
+1. Scan source into tokens.
+2. Parse tokens into statements AST.
+3. Resolve lexical scope/static constraints.
+4. Execute with interpreter.
+
+---
+
+## Repository Layout
+
+```text
+litecode/
+  lexer/         # scanner/tokenization module + docs
+  parser/        # AST + recursive descent parser + docs
+  resolver/      # lexical scope resolver + docs
+  interpreter/   # runtime/evaluator + docs
+  tests/         # unit and integration tests + docs
+  scripts/       # smoke/regression scripts
+  docs/          # status documents
+  main.cpp       # entrypoint (file mode + REPL)
+```
+
+---
+
+## Implemented Language Features
+
+- Literals: `nil`, booleans, numbers, strings
+- Expressions: arithmetic, comparison, equality, unary, logical operators
+- Statements: `print`, `var`, block, `if/else`, `while`, `for`, `return`
+- Functions: declarations, calls, closures, recursion
+- Classes: instances, fields, methods, `this`, inheritance, `super`
+- Native function: `clock()`
+
+For detailed semantics and examples, see [interpreter/README.md](interpreter/README.md).
+
+---
+
+## Build and Run
+
+### Prerequisites
+- CMake 3.16+
+- C++17 compiler
+
+### Build
+
+```bash
+cmake -S . -B build
+cmake --build build -j
+```
+
+### Run script file
+
+```bash
+./build/litecode path/to/file.lox
+```
+
+### Run REPL
+
+```bash
+./build/litecode
+```
+
+### Debug toggles
+
+```bash
+LITECODE_DUMP_TOKENS=1 ./build/litecode sample.lox
+LITECODE_DUMP_AST=1 ./build/litecode sample.lox
+```
+
+---
+
+## Testing and Validation
+
+### Full test suite
+
+```bash
+ctest --test-dir build --output-on-failure
+```
+
+### Smoke checks
+
+```bash
+./scripts/regression_smoke.sh ./build/litecode
+```
+
+Detailed test documentation: [tests/README.md](tests/README.md)
+
+---
+
+## Exit Codes and Error Model
+
+- `64`: command usage error
+- `65`: language error (lex/parse/resolve/runtime)
+- `66`: file input error (for example missing script)
+
+---
+
+## Progress vs Crafting Interpreters
+
+Current state aligns approximately through late `jlox` chapters:
+- scanning, parsing, expressions/statements, control flow
+- functions and closures
+- resolver and lexical binding
+- classes and inheritance (`this`/`super`)
+
+Progress details: [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)
+
+---
+
+## Known Tradeoffs
+
+- REPL keeps AST batches alive for safe function/class pointer lifetimes; long sessions can grow memory.
+- No garbage collector yet (smart pointers currently handle ownership).
+- Internal naming has a few intentional differences (for example `NILL`, `LEFT_PARENTH`) but is consistent.
+
+---
+
+## Roadmap Direction
+
+### Short-term
+- tighten diagnostics and polish docs/examples
+- expand targeted edge-case tests
+
+### Mid-term
+- improve REPL memory strategy while preserving correctness
+
+### Long-term
+- start C bytecode VM branch (stack, chunks, opcodes, VM loop)
+
+---
+
+## External References
+
+- [Crafting Interpreters](https://craftinginterpreters.com/)
+- [The Lox language (book chapter)](https://craftinginterpreters.com/the-lox-language.html)
+- [A Tree-Walk Interpreter (book chapter)](https://craftinginterpreters.com/a-tree-walk-interpreter.html)
+- [CMake tutorial](https://cmake.org/cmake/help/latest/guide/tutorial/index.html)
+- [GoogleTest docs](https://google.github.io/googletest/)
+
+---
+
+## License
+
+See [LICENSE](LICENSE).
