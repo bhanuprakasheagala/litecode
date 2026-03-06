@@ -1,4 +1,5 @@
 #include "Scanner.hpp"
+#include "ErrorReporter.hpp"
 #include <iostream>
 #include <cctype>
 namespace lexer {
@@ -10,7 +11,6 @@ namespace lexer {
         std::vector<Token> tokens;
 
         while (!isAtEnd()) {
-            start = current;
             auto token = scanToken();
             if (token.has_value()) {
                 tokens.push_back(*token);
@@ -74,6 +74,7 @@ namespace lexer {
 
     std::optional<Token> Scanner::scanToken() {
         skipWhitespace();
+        start = current;
         if (isAtEnd()) return std::nullopt;
 
         char c = advance();
@@ -109,14 +110,26 @@ namespace lexer {
                 if (std::isdigit(c)) return number();
                 if (std::isalpha(c) || c == '_') return identifier();
 
-                std::cerr << "[Line " << line << "] Unexpected character: " << c << '\n';
+                ErrorReporter::report(line, "", std::string("Unexpected character: ") + c);
                 return std::nullopt;
         }
     }
     Token Scanner::number() {
+        auto isDigit = [](char ch) {
+            return ch >= '0' && ch <= '9';
+        };
+
         size_t literalStart = current - 1; // first digit was already consumed
-        while (std::isdigit(peek()))
+        while (isDigit(peek()))
             advance();
+
+        // Fractional part: consume '.' only if followed by at least one digit.
+        if (peek() == '.' && isDigit(peekNext())) {
+            advance(); // consume '.'
+            while (isDigit(peek())) {
+                advance();
+            }
+        }
 
         std::string literal = source.substr(literalStart, current - literalStart);
         return makeToken(TokenType::NUMBER, literal);
@@ -129,7 +142,7 @@ namespace lexer {
         }
 
         if (isAtEnd()) {
-            std::cerr << "[Line " << line << "] Unterminated string.\n";
+            ErrorReporter::report(line, "", "Unterminated string.");
             return std::nullopt;
         }
 
