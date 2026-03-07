@@ -111,6 +111,9 @@ cmake --build build -j
 ./build/litecode
 ```
 
+REPL helper command:
+- `.reset` clears current REPL state (variables/functions/classes) and frees retained session AST state.
+
 ### Debug toggles
 
 ```bash

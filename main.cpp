@@ -23,7 +23,7 @@ namespace lexer {
             void start() {
                 try{
                     if(argc > 2){
-                        std::cout << "Usage: toyl [script]" << std::endl;
+                        std::cout << "Usage: litecode [script]" << std::endl;
                         exit(64); /* For exit codes, I’m using the conventions defined in the UNIX “sysexits.h” header */
                     }
                     else if(argc == 2) {
@@ -80,6 +80,13 @@ namespace lexer {
                             }
                         }
                         if(inputline.empty()) {
+                            continue;
+                        }
+                        if (inputline == ".reset") {
+                            interpreter = ::interpreter::Interpreter();
+                            programBatches.clear();
+                            std::cout << "State reset." << std::endl;
+                            hadError = false;
                             continue;
                         }
 

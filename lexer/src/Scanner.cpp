@@ -107,8 +107,8 @@ namespace lexer {
                 return string();
 
             default:
-                if (std::isdigit(c)) return number();
-                if (std::isalpha(c) || c == '_') return identifier();
+                if (std::isdigit(static_cast<unsigned char>(c))) return number();
+                if (std::isalpha(static_cast<unsigned char>(c)) || c == '_') return identifier();
 
                 ErrorReporter::report(line, "", std::string("Unexpected character: ") + c);
                 return std::nullopt;
@@ -151,7 +151,7 @@ namespace lexer {
         return makeToken(TokenType::STRING, literal);
     }
     Token Scanner::identifier() {
-        while (std::isalnum(peek()) || peek() == '_') advance();
+        while (std::isalnum(static_cast<unsigned char>(peek())) || peek() == '_') advance();
         std::string text = source.substr(start, current - start);
         TokenType type = Keywords.count(text) ? Keywords.at(text) : TokenType::IDENTIFIER;
         return makeToken(type);
