@@ -39,11 +39,12 @@ public:
     void define(const std::string& name, const Value& value);
     Value get(const lexer::Token& name) const;
     void assign(const lexer::Token& name, const Value& value);
+    Value getAt(int distance, const lexer::Token& name) const;
     Value getAt(int distance, const std::string& name) const;
     void assignAt(int distance, const lexer::Token& name, const Value& value);
 
 private:
-    std::shared_ptr<Environment> ancestor(int distance) const;
+    std::shared_ptr<Environment> ancestor(int distance, const lexer::Token* token = nullptr) const;
 
     std::unordered_map<std::string, Value> values;
     std::shared_ptr<Environment> enclosing;

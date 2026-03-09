@@ -48,20 +48,32 @@ Value Environment::getAt(int distance, const std::string& name) const {
     throw std::runtime_error("Resolver mismatch: variable not found at resolved distance.");
 }
 
+Value Environment::getAt(int distance, const lexer::Token& name) const {
+    auto env = ancestor(distance, &name);
+    auto it = env->values.find(name.getLexeme());
+    if (it != env->values.end()) {
+        return it->second;
+    }
+    throw RuntimeError(name, "Resolver mismatch: variable not found at resolved distance.");
+}
+
 void Environment::assignAt(int distance, const lexer::Token& name, const Value& value) {
-    auto env = ancestor(distance);
+    auto env = ancestor(distance, &name);
     auto it = env->values.find(name.getLexeme());
     if (it != env->values.end()) {
         it->second = value;
         return;
     }
-    throw std::runtime_error("Resolver mismatch: variable not found at resolved distance.");
+    throw RuntimeError(name, "Resolver mismatch: variable not found at resolved distance.");
 }
 
-std::shared_ptr<Environment> Environment::ancestor(int distance) const {
+std::shared_ptr<Environment> Environment::ancestor(int distance, const lexer::Token* token) const {
     std::shared_ptr<const Environment> environment = shared_from_this();
     for (int i = 0; i < distance; ++i) {
         if (!environment->enclosing) {
+            if (token != nullptr) {
+                throw RuntimeError(*token, "Resolver mismatch: invalid environment distance.");
+            }
             throw std::runtime_error("Resolver mismatch: invalid environment distance.");
         }
         environment = environment->enclosing;
