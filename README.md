@@ -113,6 +113,7 @@ cmake --build build -j
 
 REPL helper command:
 - `.reset` clears current REPL state (variables/functions/classes) and frees retained session AST state.
+- optional env knob: `LITECODE_REPL_AUTO_RESET_EVERY=<N>` auto-resets REPL state after every `N` successful inputs (default disabled).
 
 ### Debug toggles
 
