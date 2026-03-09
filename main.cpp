@@ -5,6 +5,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <vector>
+#include <limits>
 #include "lexer/inc/Scanner.hpp"
 #include "lexer/inc/ErrorReporter.hpp"
 #include "parser/inc/Parser.hpp"
@@ -44,6 +45,31 @@ namespace lexer {
             interpreter::Interpreter interpreter;
             std::vector<std::vector<parser::StmtPtr>> programBatches;
 
+            void resetReplState() {
+                interpreter = ::interpreter::Interpreter();
+                programBatches.clear();
+            }
+
+            static size_t replAutoResetThreshold() {
+                const char* env = std::getenv("LITECODE_REPL_AUTO_RESET_EVERY");
+                if (env == nullptr || std::string(env).empty()) {
+                    return 0;
+                }
+
+                try {
+                    unsigned long long value = std::stoull(env);
+                    if (value == 0) {
+                        return 0;
+                    }
+                    if (value > std::numeric_limits<size_t>::max()) {
+                        return std::numeric_limits<size_t>::max();
+                    }
+                    return static_cast<size_t>(value);
+                } catch (...) {
+                    return 0;
+                }
+            }
+
             void runFile(const std::string& path) {
                 try {
                     std::ifstream file(path, std::ios::binary);
@@ -69,6 +95,8 @@ namespace lexer {
             void runPrompt(){
                 try {
                     std::string inputline;
+                    size_t successfulRuns = 0;
+                    const size_t autoResetEvery = replAutoResetThreshold();
                     while(true){
                         std::cout << "> ";
 
@@ -83,14 +111,22 @@ namespace lexer {
                             continue;
                         }
                         if (inputline == ".reset") {
-                            interpreter = ::interpreter::Interpreter();
-                            programBatches.clear();
+                            resetReplState();
                             std::cout << "State reset." << std::endl;
+                            successfulRuns = 0;
                             hadError = false;
                             continue;
                         }
 
                         run(inputline);
+                        if (!hadError) {
+                            ++successfulRuns;
+                            if (autoResetEvery > 0 && successfulRuns >= autoResetEvery) {
+                                resetReplState();
+                                successfulRuns = 0;
+                                std::cout << "State reset." << std::endl;
+                            }
+                        }
                         hadError = false;
                     }
                 }
