@@ -13,14 +13,29 @@
 #include "interpreter/inc/Interpreter.hpp"
 #include "resolver/inc/Resolver.hpp"
 
+/**
+ * @file main.cpp
+ * @brief Command-line driver and REPL host for Litecode interpreter pipeline.
+ *
+ * Beginner overview:
+ * - file mode: read script, run full pipeline once, exit with sysexit-style code.
+ * - REPL mode: run pipeline per line and preserve runtime state across inputs.
+ */
+
 namespace lexer {
 
     static bool hadError = false;
 
     class litecode{
         public:
+            /**
+             * @brief Constructs driver with process arguments.
+             */
             litecode(int argc, char* argv[]) : argc(argc), argv(argv){}
             ~litecode(){}
+            /**
+             * @brief Entrypoint for selecting file mode or REPL mode.
+             */
             void start() {
                 try{
                     if(argc > 2){
@@ -45,11 +60,20 @@ namespace lexer {
             interpreter::Interpreter interpreter;
             std::vector<std::vector<parser::StmtPtr>> programBatches;
 
+            /**
+             * @brief Reinitializes interpreter and drops retained REPL AST batches.
+             *
+             * This is used by explicit `.reset` command and optional auto-reset policy.
+             */
             void resetReplState() {
                 interpreter = ::interpreter::Interpreter();
                 programBatches.clear();
             }
 
+            /**
+             * @brief Parses optional REPL auto-reset threshold from environment.
+             * @return Number of successful inputs before reset, or 0 when disabled/invalid.
+             */
             static size_t replAutoResetThreshold() {
                 const char* env = std::getenv("LITECODE_REPL_AUTO_RESET_EVERY");
                 if (env == nullptr || std::string(env).empty()) {
@@ -70,6 +94,10 @@ namespace lexer {
                 }
             }
 
+            /**
+             * @brief Executes script from file path.
+             * @param path Script file path.
+             */
             void runFile(const std::string& path) {
                 try {
                     std::ifstream file(path, std::ios::binary);
@@ -92,6 +120,13 @@ namespace lexer {
                 }
             }
 
+            /**
+             * @brief Interactive prompt loop.
+             *
+             * Supports:
+             * - `.reset` command to clear session state.
+             * - optional auto-reset via `LITECODE_REPL_AUTO_RESET_EVERY`.
+             */
             void runPrompt(){
                 try {
                     std::string inputline;
@@ -135,6 +170,16 @@ namespace lexer {
                 }
             }
 
+            /**
+             * @brief Executes complete frontend/runtime pipeline for one source chunk.
+             * @param inputSource Raw Litecode source text.
+             *
+             * Pipeline:
+             * 1. Scanner
+             * 2. Parser
+             * 3. Resolver
+             * 4. Interpreter
+             */
             void run(const std::string& inputSource) {
                 ErrorReporter::reset();
 
@@ -198,6 +243,10 @@ namespace lexer {
 
 
 int main(int argc, char* argv[]) {
+    /**
+     * Process-level entrypoint:
+     * construct CLI driver and delegate all mode-specific handling to it.
+     */
     lexer::litecode lc(argc, argv);
     lc.start();
 

@@ -3,7 +3,21 @@
 
 namespace lexer {
 
-    // Represents the different types of tokens in the language
+    /**
+     * @file TokenType.hpp
+     * @brief Enumerates every lexical token kind recognized by the Litecode scanner.
+     *
+     * This enum is the shared vocabulary between scanner, parser, resolver, and interpreter.
+     * A beginner can think of this as the "alphabet of grammar symbols" used by the parser.
+     */
+
+    /**
+     * @brief Strongly-typed token categories used by the scanner and parser.
+     *
+     * Naming note:
+     * - `NILL` is the internal token name used in this repository for the source keyword `nil`.
+     * - `LEFT_PARENTH` / `RIGHT_PARENTH` are legacy internal names kept for consistency.
+     */
     enum class TokenType {
         
         // Single character tokens
@@ -56,6 +70,13 @@ namespace lexer {
         END_OF_FILE // EOF marker
     };
 
+    /**
+     * @brief Converts a token kind to a stable debug string.
+     * @param type Token kind to stringify.
+     * @return Human-readable token identifier.
+     *
+     * This function is primarily used by token dump/debug output and test diagnostics.
+     */
     inline const char* toString(TokenType type) {
         switch(type) {
             case TokenType::LEFT_PARENTH: return "LEFT_PARENTH";
@@ -100,6 +121,6 @@ namespace lexer {
             default: return "UNKNOWN";
         }
     }
-}
+}  // namespace lexer
 
 #endif
