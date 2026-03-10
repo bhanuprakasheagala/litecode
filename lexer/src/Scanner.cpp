@@ -2,11 +2,23 @@
 #include "ErrorReporter.hpp"
 #include <iostream>
 #include <cctype>
+
+/**
+ * @file Scanner.cpp
+ * @brief Implements lexical scanning from source text into token stream.
+ */
+
 namespace lexer {
 
+    /**
+     * @brief Constructs scanner over immutable source string.
+     */
     Scanner::Scanner(const std::string& source)
         : source(source), start(0), current(0), line(1) {}
 
+    /**
+     * @brief Scans full source and emits token vector including END_OF_FILE sentinel.
+     */
     std::vector<Token> Scanner::scanTokens() {
         std::vector<Token> tokens;
 
@@ -21,20 +33,32 @@ namespace lexer {
         return tokens;
     }
 
+    /**
+     * @brief Consumes and returns current character.
+     */
     char Scanner::advance() {
         return source[current++];
     }
 
+    /**
+     * @brief Peeks current character without consuming.
+     */
     char Scanner::peek() const {
         if (isAtEnd()) return '\0';
         return source[current];
     }
 
+    /**
+     * @brief Peeks one character ahead without consuming.
+     */
     char Scanner::peekNext() const {
         if (current + 1 >= source.length()) return '\0';
         return source[current + 1];
     }
 
+    /**
+     * @brief Conditionally consumes expected character.
+     */
     bool Scanner::match(char expected) {
         if (isAtEnd()) return false;
         if (source[current] != expected) return false;
@@ -42,10 +66,16 @@ namespace lexer {
         return true;
     }
 
+    /**
+     * @brief Checks whether scanner cursor has reached end of source.
+     */
     bool Scanner::isAtEnd() const {
         return current >= source.length();
     }
 
+    /**
+     * @brief Skips spaces, tabs, newlines, and line comments.
+     */
     void Scanner::skipWhitespace() {
         while (!isAtEnd()) {
             char c = peek();
@@ -72,6 +102,9 @@ namespace lexer {
         }
     }
 
+    /**
+     * @brief Scans one token at current cursor position.
+     */
     std::optional<Token> Scanner::scanToken() {
         skipWhitespace();
         start = current;
@@ -114,6 +147,9 @@ namespace lexer {
                 return std::nullopt;
         }
     }
+    /**
+     * @brief Scans numeric literal with optional fractional part.
+     */
     Token Scanner::number() {
         auto isDigit = [](char ch) {
             return ch >= '0' && ch <= '9';
@@ -134,6 +170,9 @@ namespace lexer {
         std::string literal = source.substr(literalStart, current - literalStart);
         return makeToken(TokenType::NUMBER, literal);
     }
+    /**
+     * @brief Scans string literal between double quotes.
+     */
     std::optional<Token> Scanner::string() {
         size_t literalStart = current; // skip opening quote
         while (peek() != '"' && !isAtEnd()) {
@@ -150,12 +189,18 @@ namespace lexer {
         std::string literal = source.substr(literalStart, current - literalStart - 1);
         return makeToken(TokenType::STRING, literal);
     }
+    /**
+     * @brief Scans identifier and upgrades to keyword token when matched.
+     */
     Token Scanner::identifier() {
         while (std::isalnum(static_cast<unsigned char>(peek())) || peek() == '_') advance();
         std::string text = source.substr(start, current - start);
         TokenType type = Keywords.count(text) ? Keywords.at(text) : TokenType::IDENTIFIER;
         return makeToken(type);
     }
+    /**
+     * @brief Builds token from currently tracked lexeme range.
+     */
     Token Scanner::makeToken(TokenType type, const std::string& literal) {
         std::string lexeme = source.substr(start, current - start); // full token text
         return Token(type, lexeme, literal, line);

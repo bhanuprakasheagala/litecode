@@ -7,12 +7,26 @@
 
 namespace parser {
 
+/**
+ * @file Stmt.hpp
+ * @brief Defines statement AST node types for Litecode programs.
+ */
+
+/**
+ * @brief Polymorphic base type for all statement nodes.
+ */
 struct Stmt {
     virtual ~Stmt() = default;
 };
 
+/**
+ * @brief Owning pointer alias for statements.
+ */
 using StmtPtr = std::unique_ptr<Stmt>;
 
+/**
+ * @brief Expression statement (`expr;`).
+ */
 struct ExpressionStmt : Stmt {
     ExprPtr expression;
 
@@ -20,6 +34,9 @@ struct ExpressionStmt : Stmt {
         : expression(std::move(expression)) {}
 };
 
+/**
+ * @brief Print statement (`print expr;`).
+ */
 struct PrintStmt : Stmt {
     ExprPtr expression;
 
@@ -27,6 +44,9 @@ struct PrintStmt : Stmt {
         : expression(std::move(expression)) {}
 };
 
+/**
+ * @brief Variable declaration statement (`var name = initializer;`).
+ */
 struct VarStmt : Stmt {
     lexer::Token name;
     ExprPtr initializer;
@@ -35,6 +55,9 @@ struct VarStmt : Stmt {
         : name(std::move(name)), initializer(std::move(initializer)) {}
 };
 
+/**
+ * @brief Block statement containing nested statements and lexical scope.
+ */
 struct BlockStmt : Stmt {
     std::vector<StmtPtr> statements;
 
@@ -42,6 +65,9 @@ struct BlockStmt : Stmt {
         : statements(std::move(statements)) {}
 };
 
+/**
+ * @brief Conditional statement (`if (...) then ... else ...`).
+ */
 struct IfStmt : Stmt {
     ExprPtr condition;
     StmtPtr thenBranch;
@@ -53,6 +79,9 @@ struct IfStmt : Stmt {
           elseBranch(std::move(elseBranch)) {}
 };
 
+/**
+ * @brief While loop statement.
+ */
 struct WhileStmt : Stmt {
     ExprPtr condition;
     StmtPtr body;
@@ -61,6 +90,11 @@ struct WhileStmt : Stmt {
         : condition(std::move(condition)), body(std::move(body)) {}
 };
 
+/**
+ * @brief Function declaration statement.
+ *
+ * Holds function name, parameter list, and body block statements.
+ */
 struct FunctionStmt : Stmt {
     lexer::Token name;
     std::vector<lexer::Token> params;
@@ -70,6 +104,9 @@ struct FunctionStmt : Stmt {
         : name(std::move(name)), params(std::move(params)), body(std::move(body)) {}
 };
 
+/**
+ * @brief Return statement used inside function/method bodies.
+ */
 struct ReturnStmt : Stmt {
     lexer::Token keyword;
     ExprPtr value;
@@ -78,6 +115,9 @@ struct ReturnStmt : Stmt {
         : keyword(std::move(keyword)), value(std::move(value)) {}
 };
 
+/**
+ * @brief Class declaration statement with optional superclass and methods.
+ */
 struct ClassStmt : Stmt {
     lexer::Token name;
     ExprPtr superclass;
