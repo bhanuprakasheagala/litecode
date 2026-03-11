@@ -2,11 +2,22 @@
 #include <iostream>
 #include <utility>
 
+/**
+ * @file Parser.cpp
+ * @brief Implements recursive-descent parser for Litecode grammar.
+ */
+
 namespace parser {
 
+/**
+ * @brief Initializes parser over scanner token sequence.
+ */
 Parser::Parser(const std::vector<lexer::Token>& tokens)
     : tokens(tokens), current(0), hadParseError(false) {}
 
+/**
+ * @brief Parses entire token stream into top-level statement list.
+ */
 std::vector<StmtPtr> Parser::parse() {
     std::vector<StmtPtr> statements;
     while (!isAtEnd()) {
@@ -18,6 +29,9 @@ std::vector<StmtPtr> Parser::parse() {
     return statements;
 }
 
+/**
+ * @brief Parses declaration production with error synchronization boundary.
+ */
 StmtPtr Parser::declaration() {
     try {
         if (match({lexer::TokenType::CLASS})) return classDeclaration();
@@ -30,6 +44,9 @@ StmtPtr Parser::declaration() {
     }
 }
 
+/**
+ * @brief Parses class declaration including optional superclass and methods.
+ */
 StmtPtr Parser::classDeclaration() {
     lexer::Token name = consume(lexer::TokenType::IDENTIFIER, "Expect class name.");
 
@@ -49,6 +66,9 @@ StmtPtr Parser::classDeclaration() {
     return std::make_unique<ClassStmt>(std::move(name), std::move(superclass), std::move(methods));
 }
 
+/**
+ * @brief Parses function or method declaration.
+ */
 StmtPtr Parser::function(const std::string& kind) {
     lexer::Token name = consume(lexer::TokenType::IDENTIFIER, "Expect " + kind + " name.");
     consume(lexer::TokenType::LEFT_PARENTH, "Expect '(' after " + kind + " name.");
@@ -69,6 +89,9 @@ StmtPtr Parser::function(const std::string& kind) {
     return std::make_unique<FunctionStmt>(std::move(name), std::move(parameters), std::move(body));
 }
 
+/**
+ * @brief Parses variable declaration statement.
+ */
 StmtPtr Parser::varDeclaration() {
     lexer::Token name = consume(lexer::TokenType::IDENTIFIER, "Expect variable name.");
 
@@ -81,6 +104,9 @@ StmtPtr Parser::varDeclaration() {
     return std::make_unique<VarStmt>(std::move(name), std::move(initializer));
 }
 
+/**
+ * @brief Parses generic statement production.
+ */
 StmtPtr Parser::statement() {
     if (match({lexer::TokenType::FOR})) return forStatement();
     if (match({lexer::TokenType::IF})) return ifStatement();
@@ -91,6 +117,9 @@ StmtPtr Parser::statement() {
     return expressionStatement();
 }
 
+/**
+ * @brief Parses `for` and desugars it into `while` + block AST.
+ */
 StmtPtr Parser::forStatement() {
     consume(lexer::TokenType::LEFT_PARENTH, "Expect '(' after 'for'.");
 
@@ -139,6 +168,9 @@ StmtPtr Parser::forStatement() {
     return body;
 }
 
+/**
+ * @brief Parses `if`/`else` statement.
+ */
 StmtPtr Parser::ifStatement() {
     consume(lexer::TokenType::LEFT_PARENTH, "Expect '(' after 'if'.");
     ExprPtr condition = expression();
@@ -153,6 +185,9 @@ StmtPtr Parser::ifStatement() {
     return std::make_unique<IfStmt>(std::move(condition), std::move(thenBranch), std::move(elseBranch));
 }
 
+/**
+ * @brief Parses `while` statement.
+ */
 StmtPtr Parser::whileStatement() {
     consume(lexer::TokenType::LEFT_PARENTH, "Expect '(' after 'while'.");
     ExprPtr condition = expression();
@@ -161,12 +196,18 @@ StmtPtr Parser::whileStatement() {
     return std::make_unique<WhileStmt>(std::move(condition), std::move(body));
 }
 
+/**
+ * @brief Parses `print` statement.
+ */
 StmtPtr Parser::printStatement() {
     ExprPtr value = expression();
     consume(lexer::TokenType::SEMICOLON, "Expect ';' after value.");
     return std::make_unique<PrintStmt>(std::move(value));
 }
 
+/**
+ * @brief Parses `return` statement with optional value expression.
+ */
 StmtPtr Parser::returnStatement() {
     lexer::Token keyword = previous();
     ExprPtr value = nullptr;
@@ -177,12 +218,18 @@ StmtPtr Parser::returnStatement() {
     return std::make_unique<ReturnStmt>(std::move(keyword), std::move(value));
 }
 
+/**
+ * @brief Parses expression statement.
+ */
 StmtPtr Parser::expressionStatement() {
     ExprPtr expr = expression();
     consume(lexer::TokenType::SEMICOLON, "Expect ';' after expression.");
     return std::make_unique<ExpressionStmt>(std::move(expr));
 }
 
+/**
+ * @brief Parses brace-delimited block body.
+ */
 std::vector<StmtPtr> Parser::block() {
     std::vector<StmtPtr> statements;
 
@@ -195,10 +242,16 @@ std::vector<StmtPtr> Parser::block() {
     return statements;
 }
 
+/**
+ * @brief Entry point for expression precedence chain.
+ */
 ExprPtr Parser::expression() {
     return assignment();
 }
 
+/**
+ * @brief Parses assignment expression.
+ */
 ExprPtr Parser::assignment() {
     ExprPtr expr = logicalOr();
 
@@ -222,6 +275,9 @@ ExprPtr Parser::assignment() {
     return expr;
 }
 
+/**
+ * @brief Parses logical OR expression.
+ */
 ExprPtr Parser::logicalOr() {
     ExprPtr expr = logicalAnd();
 
@@ -234,6 +290,9 @@ ExprPtr Parser::logicalOr() {
     return expr;
 }
 
+/**
+ * @brief Parses logical AND expression.
+ */
 ExprPtr Parser::logicalAnd() {
     ExprPtr expr = equality();
 
@@ -246,6 +305,9 @@ ExprPtr Parser::logicalAnd() {
     return expr;
 }
 
+/**
+ * @brief Parses equality expression.
+ */
 ExprPtr Parser::equality() {
     ExprPtr expr = comparison();
 
@@ -258,6 +320,9 @@ ExprPtr Parser::equality() {
     return expr;
 }
 
+/**
+ * @brief Parses comparison expression.
+ */
 ExprPtr Parser::comparison() {
     ExprPtr expr = term();
 
@@ -273,6 +338,9 @@ ExprPtr Parser::comparison() {
     return expr;
 }
 
+/**
+ * @brief Parses additive expression (`+`, `-`).
+ */
 ExprPtr Parser::term() {
     ExprPtr expr = factor();
 
@@ -285,6 +353,9 @@ ExprPtr Parser::term() {
     return expr;
 }
 
+/**
+ * @brief Parses multiplicative expression (`*`, `/`).
+ */
 ExprPtr Parser::factor() {
     ExprPtr expr = unary();
 
@@ -297,6 +368,9 @@ ExprPtr Parser::factor() {
     return expr;
 }
 
+/**
+ * @brief Parses unary expression.
+ */
 ExprPtr Parser::unary() {
     if (match({lexer::TokenType::BANG, lexer::TokenType::MINUS})) {
         lexer::Token op = previous();
@@ -307,6 +381,9 @@ ExprPtr Parser::unary() {
     return call();
 }
 
+/**
+ * @brief Parses call/property-chaining expression suffixes.
+ */
 ExprPtr Parser::call() {
     ExprPtr expr = primary();
 
@@ -325,6 +402,9 @@ ExprPtr Parser::call() {
     return expr;
 }
 
+/**
+ * @brief Parses argument list and call closing token.
+ */
 ExprPtr Parser::finishCall(ExprPtr callee) {
     std::vector<ExprPtr> arguments;
     if (!check(lexer::TokenType::RIGHT_PARENTH)) {
@@ -340,6 +420,9 @@ ExprPtr Parser::finishCall(ExprPtr callee) {
     return std::make_unique<Call>(std::move(callee), std::move(paren), std::move(arguments));
 }
 
+/**
+ * @brief Parses primary expression forms (literals, identifiers, grouping, this/super).
+ */
 ExprPtr Parser::primary() {
     if (match({lexer::TokenType::FALSE})) return std::make_unique<Literal>(false);
     if (match({lexer::TokenType::TRUE})) return std::make_unique<Literal>(true);
@@ -374,6 +457,9 @@ ExprPtr Parser::primary() {
     throw error(peek(), "Expected expression.");
 }
 
+/**
+ * @brief Tries to match and consume any token in the given set.
+ */
 bool Parser::match(std::initializer_list<lexer::TokenType> types) {
     for (auto type : types) {
         if (check(type)) {
@@ -384,33 +470,56 @@ bool Parser::match(std::initializer_list<lexer::TokenType> types) {
     return false;
 }
 
+/**
+ * @brief Checks whether current token has requested type.
+ */
 bool Parser::check(lexer::TokenType type) const {
     if (isAtEnd()) return false;
     return peek().getType() == type;
 }
 
+/**
+ * @brief Advances parser cursor and returns previous token.
+ */
 const lexer::Token& Parser::advance() {
     if (!isAtEnd()) current++;
     return previous();
 }
 
+/**
+ * @brief Returns true when current token is EOF sentinel.
+ */
 bool Parser::isAtEnd() const {
     return peek().getType() == lexer::TokenType::END_OF_FILE;
 }
 
+/**
+ * @brief Gets current token without consuming it.
+ */
 const lexer::Token& Parser::peek() const {
     return tokens[current];
 }
 
+/**
+ * @brief Gets most recently consumed token.
+ */
 const lexer::Token& Parser::previous() const {
     return tokens[current - 1];
 }
 
+/**
+ * @brief Consumes required token kind or raises parse error.
+ */
 const lexer::Token& Parser::consume(lexer::TokenType type, const std::string& message) {
     if (check(type)) return advance();
     throw error(peek(), message);
 }
 
+/**
+ * @brief Panic-mode recovery after parse error.
+ *
+ * Skips tokens until likely declaration/statement boundary is found.
+ */
 void Parser::synchronize() {
     advance();
 
@@ -435,6 +544,9 @@ void Parser::synchronize() {
     }
 }
 
+/**
+ * @brief Emits parse diagnostic and returns marker error value.
+ */
 Parser::ParseError Parser::error(const lexer::Token& token, const std::string& message) {
     hadParseError = true;
     std::cerr << "[Line " << token.getLine() << "] Error";

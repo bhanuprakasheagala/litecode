@@ -2,16 +2,30 @@
 #include <sstream>
 #include <vector>
 
+/**
+ * @file AstPrinter.cpp
+ * @brief Implements textual AST rendering for debugging and learning.
+ */
+
 namespace parser {
 
+/**
+ * @brief Prints expression AST subtree.
+ */
 std::string AstPrinter::print(const Expr& expr) {
     return visit(expr);
 }
 
+/**
+ * @brief Prints statement AST subtree.
+ */
 std::string AstPrinter::print(const Stmt& stmt) {
     return visit(stmt);
 }
 
+/**
+ * @brief Prints full program AST.
+ */
 std::string AstPrinter::printProgram(const std::vector<StmtPtr>& statements) {
     std::ostringstream out;
     bool first = true;
@@ -24,6 +38,9 @@ std::string AstPrinter::printProgram(const std::vector<StmtPtr>& statements) {
     return out.str();
 }
 
+/**
+ * @brief Internal expression visitor via runtime type dispatch.
+ */
 std::string AstPrinter::visit(const Expr& expr) {
     if (auto binary = dynamic_cast<const Binary*>(&expr)) {
         return parenthesize(binary->op.getLexeme(), {binary->left.get(), binary->right.get()});
@@ -93,6 +110,9 @@ std::string AstPrinter::visit(const Expr& expr) {
     return "<unknown expr>";
 }
 
+/**
+ * @brief Internal statement visitor via runtime type dispatch.
+ */
 std::string AstPrinter::visit(const Stmt& stmt) {
     if (auto expressionStmt = dynamic_cast<const ExpressionStmt*>(&stmt)) {
         return parenthesize("expr", {expressionStmt->expression.get()});
@@ -170,6 +190,9 @@ std::string AstPrinter::visit(const Stmt& stmt) {
     return "<unknown stmt>";
 }
 
+/**
+ * @brief Shared helper to build Lisp-like parenthesized output.
+ */
 std::string AstPrinter::parenthesize(const std::string& name, const std::vector<const Expr*>& exprs) {
     std::ostringstream out;
     out << "(" << name;
