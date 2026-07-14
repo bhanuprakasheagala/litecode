@@ -1,0 +1,8 @@
+class Bag {
+  init(v) { this.value = v; }
+  get() { return this.value; }
+}
+var b = Bag(41);
+print b.get();
+b.value = 99;
+print b.value;
