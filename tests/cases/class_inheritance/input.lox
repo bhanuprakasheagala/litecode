@@ -1,0 +1,7 @@
+class A {
+  speak() { return "A"; }
+}
+class B < A {
+  speak() { return super.speak() + "B"; }
+}
+print B().speak();
