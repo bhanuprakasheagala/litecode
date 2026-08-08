@@ -1,4 +1,5 @@
 #include "Parser.hpp"
+#include "HostConfig.hpp"
 #include <iostream>
 #include <utility>
 
@@ -549,13 +550,22 @@ void Parser::synchronize() {
  */
 Parser::ParseError Parser::error(const lexer::Token& token, const std::string& message) {
     hadParseError = true;
-    std::cerr << "[Line " << token.getLine() << "] Error";
-    if (token.getType() == lexer::TokenType::END_OF_FILE) {
-        std::cerr << " at end";
+    std::string location = token.getType() == lexer::TokenType::END_OF_FILE ? "end" : token.getLexeme();
+    if (::litecode::structuredDiagnosticsEnabled()) {
+        std::cerr << ::litecode::formatDiagnostic(::litecode::DiagnosticStage::Parse,
+                                                 token.getLine(),
+                                                 location,
+                                                 message)
+                  << '\n';
     } else {
-        std::cerr << " at '" << token.getLexeme() << "'";
+        std::cerr << "[Line " << token.getLine() << "] Error";
+        if (token.getType() == lexer::TokenType::END_OF_FILE) {
+            std::cerr << " at end";
+        } else {
+            std::cerr << " at '" << token.getLexeme() << "'";
+        }
+        std::cerr << ": " << message << '\n';
     }
-    std::cerr << ": " << message << '\n';
     return ParseError{};
 }
 

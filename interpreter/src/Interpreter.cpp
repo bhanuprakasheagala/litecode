@@ -1,4 +1,5 @@
 #include "Interpreter.hpp"
+#include "HostConfig.hpp"
 
 #include <chrono>
 #include <cmath>
@@ -451,7 +452,15 @@ void Interpreter::checkNumberOperands(const lexer::Token& op,
  */
 void Interpreter::runtimeError(const RuntimeError& error) {
     hadError = true;
-    std::cerr << error.what() << "\n[line " << error.getToken().getLine() << "]\n";
+    if (::litecode::structuredDiagnosticsEnabled()) {
+        std::cerr << ::litecode::formatDiagnostic(::litecode::DiagnosticStage::Runtime,
+                                                 error.getToken().getLine(),
+                                                 error.getToken().getLexeme(),
+                                                 error.what())
+                  << '\n';
+    } else {
+        std::cerr << error.what() << "\n[line " << error.getToken().getLine() << "]\n";
+    }
 }
 
 }  // namespace interpreter

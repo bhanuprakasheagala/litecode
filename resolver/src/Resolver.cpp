@@ -1,4 +1,5 @@
 #include "Resolver.hpp"
+#include "HostConfig.hpp"
 
 #include <iostream>
 
@@ -280,8 +281,16 @@ void Resolver::resolveLocal(const parser::Expr& expr, const lexer::Token& name) 
  */
 void Resolver::error(const lexer::Token& token, const std::string& message) {
     hasError = true;
-    std::cerr << "[Line " << token.getLine() << "] Error at '" << token.getLexeme()
-              << "': " << message << '\n';
+    if (::litecode::structuredDiagnosticsEnabled()) {
+        std::cerr << ::litecode::formatDiagnostic(::litecode::DiagnosticStage::Resolve,
+                                                 token.getLine(),
+                                                 token.getLexeme(),
+                                                 message)
+                  << '\n';
+    } else {
+        std::cerr << "[Line " << token.getLine() << "] Error at '" << token.getLexeme()
+                  << "': " << message << '\n';
+    }
 }
 
 }  // namespace resolver
