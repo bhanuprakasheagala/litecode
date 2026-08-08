@@ -29,6 +29,10 @@ set(RESOLVER_SOURCES
     resolver/src/Resolver.cpp
 )
 
+set(BYTECODE_SOURCES
+    # no cpp files yet: bytecode layer is currently compiler-only foundation
+)
+
 set(MAIN_SOURCES
     main.cpp
 )
@@ -41,6 +45,7 @@ add_library(litecode_core
     ${PARSER_SOURCES}
     ${INTERPRETER_SOURCES}
     ${RESOLVER_SOURCES}
+    ${BYTECODE_SOURCES}
 )
 
 # -----------------------------
@@ -51,6 +56,7 @@ target_include_directories(litecode_core PUBLIC
     parser/inc
     interpreter/inc
     resolver/inc
+    bytecode/inc
 )
 
 # -----------------------------
@@ -94,6 +100,7 @@ if(BUILD_TESTING)
             tests/unit/parser_resolver_test.cpp
             tests/unit/interpreter_test.cpp
             tests/unit/environment_test.cpp
+            tests/unit/bytecode_test.cpp
         )
         target_link_libraries(litecode_unit_tests PRIVATE litecode_core GTest::gtest_main)
         gtest_discover_tests(litecode_unit_tests)

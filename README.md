@@ -99,17 +99,28 @@ cmake -S . -B build
 cmake --build build -j
 ```
 
-### Run script file
+### Run a script file
+
+Use a `.lox` source file when you want to execute a complete program in one shot:
 
 ```bash
 ./build/litecode path/to/file.lox
 ```
 
-### Run REPL
+This is the recommended way to run finished programs and is the default product workflow for file-based validation.
+
+### Run the REPL
+
+Use the interactive prompt when you want to type Lox code line by line:
 
 ```bash
 ./build/litecode
 ```
+
+REPL commands:
+- `.help` shows available commands
+- `.reset` clears the current interpreter state
+- `.quit` exits the prompt
 
 REPL helper command:
 - `.reset` clears current REPL state (variables/functions/classes) and frees retained session AST state.

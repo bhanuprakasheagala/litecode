@@ -10,6 +10,7 @@
 #include "lexer/inc/ErrorReporter.hpp"
 #include "parser/inc/Parser.hpp"
 #include "parser/inc/AstPrinter.hpp"
+#include "interpreter/inc/HostConfig.hpp"
 #include "interpreter/inc/Interpreter.hpp"
 #include "resolver/inc/Resolver.hpp"
 
@@ -31,21 +32,33 @@ namespace lexer {
             /**
              * @brief Constructs driver with process arguments.
              */
-            litecode(int argc, char* argv[]) : argc(argc), argv(argv){}
+            litecode(int argc, char* argv[]) : argc(argc), argv(argv), replBatchLimit(replMaxBatches()) {
+                options = ::litecode::parseCliArguments(argc, argv);
+                if (options.showHelp) {
+                    std::cout << ::litecode::usageText();
+                }
+                if (options.showVersion) {
+                    std::cout << ::litecode::versionText();
+                }
+                if (options.hasError) {
+                    std::cerr << options.errorMessage << std::endl;
+                    std::cerr << ::litecode::usageText();
+                    exit(64);
+                }
+            }
             ~litecode(){}
             /**
              * @brief Entrypoint for selecting file mode or REPL mode.
              */
             void start() {
                 try{
-                    if(argc > 2){
-                        std::cout << "Usage: litecode [script]" << std::endl;
-                        exit(64); /* For exit codes, I’m using the conventions defined in the UNIX “sysexits.h” header */
+                    if (options.showHelp || options.showVersion) {
+                        return;
                     }
-                    else if(argc == 2) {
-                        runFile(argv[1]); // File mode
+                    if (!options.scriptPath.empty()) {
+                        runFile(options.scriptPath); // File mode
                     }
-                    else{
+                    else {
                         runPrompt(); // Interactive mode
                     }
                 }
@@ -57,17 +70,22 @@ namespace lexer {
         private:
             int argc;
             char** argv;
+            ::litecode::CliOptions options;
             interpreter::Interpreter interpreter;
             std::vector<std::vector<parser::StmtPtr>> programBatches;
+            size_t replBatchLimit;
 
             /**
              * @brief Reinitializes interpreter and drops retained REPL AST batches.
              *
              * This is used by explicit `.reset` command and optional auto-reset policy.
              */
-            void resetReplState() {
+            void resetReplState(bool announce = true) {
                 interpreter = ::interpreter::Interpreter();
                 programBatches.clear();
+                if (announce) {
+                    std::cout << "State reset." << std::endl;
+                }
             }
 
             /**
@@ -75,23 +93,24 @@ namespace lexer {
              * @return Number of successful inputs before reset, or 0 when disabled/invalid.
              */
             static size_t replAutoResetThreshold() {
-                const char* env = std::getenv("LITECODE_REPL_AUTO_RESET_EVERY");
-                if (env == nullptr || std::string(env).empty()) {
-                    return 0;
+                size_t envValue = ::litecode::parsePositiveSizeEnv("LITECODE_REPL_AUTO_RESET_EVERY", 0, 1024);
+                if (envValue != 0) {
+                    return envValue;
                 }
+                return 0;
+            }
 
-                try {
-                    unsigned long long value = std::stoull(env);
-                    if (value == 0) {
-                        return 0;
-                    }
-                    if (value > std::numeric_limits<size_t>::max()) {
-                        return std::numeric_limits<size_t>::max();
-                    }
-                    return static_cast<size_t>(value);
-                } catch (...) {
-                    return 0;
-                }
+            /**
+             * @brief Parses maximum retained REPL AST batches before safety reset.
+             * @return Maximum number of kept program batches.
+             */
+            static size_t replMaxBatches() {
+                size_t envValue = ::litecode::parsePositiveSizeEnv("LITECODE_REPL_MAX_BATCHES", 32, 256);
+                return envValue;
+            }
+
+            static void printReplHelp() {
+                std::cout << ::litecode::replHelpText();
             }
 
             /**
@@ -131,7 +150,7 @@ namespace lexer {
                 try {
                     std::string inputline;
                     size_t successfulRuns = 0;
-                    const size_t autoResetEvery = replAutoResetThreshold();
+                    const size_t autoResetEvery = options.replAutoResetEvery > 0 ? options.replAutoResetEvery : replAutoResetThreshold();
                     while(true){
                         std::cout << "> ";
 
@@ -145,12 +164,19 @@ namespace lexer {
                         if(inputline.empty()) {
                             continue;
                         }
+                        if (inputline == ".help") {
+                            printReplHelp();
+                            hadError = false;
+                            continue;
+                        }
                         if (inputline == ".reset") {
                             resetReplState();
-                            std::cout << "State reset." << std::endl;
                             successfulRuns = 0;
                             hadError = false;
                             continue;
+                        }
+                        if (inputline == ".quit") {
+                            break;
                         }
 
                         run(inputline);
@@ -159,7 +185,6 @@ namespace lexer {
                             if (autoResetEvery > 0 && successfulRuns >= autoResetEvery) {
                                 resetReplState();
                                 successfulRuns = 0;
-                                std::cout << "State reset." << std::endl;
                             }
                         }
                         hadError = false;
@@ -191,9 +216,7 @@ namespace lexer {
                     return;
                 }
 
-                // Optional debug dump controlled by environment variable.
-                const char* dumpEnv = std::getenv("LITECODE_DUMP_TOKENS");
-                const bool dumpTokens = dumpEnv != nullptr && std::string(dumpEnv) != "0";
+                const bool dumpTokens = options.dumpTokens || (std::getenv("LITECODE_DUMP_TOKENS") != nullptr && std::string(std::getenv("LITECODE_DUMP_TOKENS")) != "0");
                 if (dumpTokens) {
                     for (const auto& token : tokens) {
                         std::cout << token << std::endl;
@@ -210,12 +233,18 @@ namespace lexer {
 
                 // Keep AST batches alive across REPL iterations so function/method
                 // declarations can safely retain pointers into statement trees.
+                // However, unbounded retention can cause long-session memory growth.
+                // Reset the session when the retention window is exceeded to keep the
+                // REPL safe while preserving the expected stateful semantics.
+                if (programBatches.size() >= replBatchLimit) {
+                    resetReplState(false);
+                    std::cout << "State reset (batch limit reached)." << std::endl;
+                }
+
                 programBatches.push_back(std::move(statements));
                 auto& currentBatch = programBatches.back();
 
-                // Optional AST dump controlled by environment variable.
-                const char* dumpAstEnv = std::getenv("LITECODE_DUMP_AST");
-                const bool dumpAst = dumpAstEnv != nullptr && std::string(dumpAstEnv) != "0";
+                const bool dumpAst = options.dumpAst || (std::getenv("LITECODE_DUMP_AST") != nullptr && std::string(std::getenv("LITECODE_DUMP_AST")) != "0");
                 if (dumpAst) {
                     parser::AstPrinter printer;
                     std::string output = printer.printProgram(currentBatch);
