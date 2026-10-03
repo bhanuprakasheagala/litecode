@@ -24,7 +24,7 @@ std::string AstPrinter::print(const Stmt& stmt) {
 }
 
 /**
- * @brief Prints full program AST.
+ * @brief Renders non-null top-level statements one per line in structural notation.
  */
 std::string AstPrinter::printProgram(const std::vector<StmtPtr>& statements) {
     std::ostringstream out;
@@ -39,7 +39,10 @@ std::string AstPrinter::printProgram(const std::vector<StmtPtr>& statements) {
 }
 
 /**
- * @brief Internal expression visitor via runtime type dispatch.
+ * @brief Converts each supported expression node to compact prefix notation.
+ *
+ * This is a debugging view of AST shape, not a source-code pretty-printer; its
+ * output favors visible operator/child structure over preserving original syntax.
  */
 std::string AstPrinter::visit(const Expr& expr) {
     if (auto binary = dynamic_cast<const Binary*>(&expr)) {
@@ -111,7 +114,7 @@ std::string AstPrinter::visit(const Expr& expr) {
 }
 
 /**
- * @brief Internal statement visitor via runtime type dispatch.
+ * @brief Converts statements and declarations to compact structural notation.
  */
 std::string AstPrinter::visit(const Stmt& stmt) {
     if (auto expressionStmt = dynamic_cast<const ExpressionStmt*>(&stmt)) {
@@ -191,7 +194,7 @@ std::string AstPrinter::visit(const Stmt& stmt) {
 }
 
 /**
- * @brief Shared helper to build Lisp-like parenthesized output.
+ * @brief Emits a prefix form with each child expression rendered recursively.
  */
 std::string AstPrinter::parenthesize(const std::string& name, const std::vector<const Expr*>& exprs) {
     std::ostringstream out;

@@ -42,17 +42,17 @@ public:
 
 private:
     /**
-     * @brief Shared helper for Lisp-like parenthesized expression output.
+    * @brief Renders an operator/form name followed by its expression children in prefix notation.
      */
     std::string parenthesize(const std::string& name,
                              const std::vector<const Expr*>& exprs);
 
     /**
-     * @brief Internal dynamic dispatch helper for expression nodes.
+    * @brief Renders known expression node types; unsupported node types get a placeholder.
      */
     std::string visit(const Expr& expr);
     /**
-     * @brief Internal dynamic dispatch helper for statement nodes.
+    * @brief Renders known statement node types; unsupported node types get a placeholder.
      */
     std::string visit(const Stmt& stmt);
 };

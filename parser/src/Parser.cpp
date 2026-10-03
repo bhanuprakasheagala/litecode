@@ -17,7 +17,10 @@ Parser::Parser(const std::vector<lexer::Token>& tokens)
     : tokens(tokens), current(0), hadParseError(false) {}
 
 /**
- * @brief Parses entire token stream into top-level statement list.
+ * @brief Parses declarations until the EOF sentinel, omitting declarations discarded during recovery.
+ *
+ * Syntax diagnostics set `hadParseError` but do not prevent later top-level
+ * declarations from being parsed after synchronization.
  */
 std::vector<StmtPtr> Parser::parse() {
     std::vector<StmtPtr> statements;
@@ -31,7 +34,10 @@ std::vector<StmtPtr> Parser::parse() {
 }
 
 /**
- * @brief Parses declaration production with error synchronization boundary.
+ * @brief Selects declaration forms and owns the panic-mode recovery boundary.
+ *
+ * A malformed declaration is dropped as a whole; `synchronize()` positions the
+ * cursor at a likely next statement so the outer loop can continue.
  */
 StmtPtr Parser::declaration() {
     try {
@@ -46,7 +52,10 @@ StmtPtr Parser::declaration() {
 }
 
 /**
- * @brief Parses class declaration including optional superclass and methods.
+ * @brief Parses a class name, optional single superclass, and method declarations.
+ *
+ * Methods use function syntax without a `fun` keyword; class-context legality and
+ * self-inheritance are checked later by the resolver.
  */
 StmtPtr Parser::classDeclaration() {
     lexer::Token name = consume(lexer::TokenType::IDENTIFIER, "Expect class name.");
@@ -68,7 +77,10 @@ StmtPtr Parser::classDeclaration() {
 }
 
 /**
- * @brief Parses function or method declaration.
+ * @brief Parses a named function/method signature and brace-delimited body.
+ *
+ * The `kind` label affects only diagnostic wording here; the resolver later
+ * assigns function, method, or initializer semantics based on the AST context/name.
  */
 StmtPtr Parser::function(const std::string& kind) {
     lexer::Token name = consume(lexer::TokenType::IDENTIFIER, "Expect " + kind + " name.");
@@ -91,7 +103,7 @@ StmtPtr Parser::function(const std::string& kind) {
 }
 
 /**
- * @brief Parses variable declaration statement.
+ * @brief Parses a variable name and optional initializer, leaving self-read checks to resolution.
  */
 StmtPtr Parser::varDeclaration() {
     lexer::Token name = consume(lexer::TokenType::IDENTIFIER, "Expect variable name.");
@@ -106,7 +118,10 @@ StmtPtr Parser::varDeclaration() {
 }
 
 /**
- * @brief Parses generic statement production.
+ * @brief Dispatches statement syntax after declaration keywords have been handled.
+ *
+ * A leading `{` creates a lexical block node; all other unmatched starts are
+ * parsed as expression statements and must end in a semicolon.
  */
 StmtPtr Parser::statement() {
     if (match({lexer::TokenType::FOR})) return forStatement();
@@ -119,7 +134,10 @@ StmtPtr Parser::statement() {
 }
 
 /**
- * @brief Parses `for` and desugars it into `while` + block AST.
+ * @brief Parses `for` clauses and lowers them to the core block/while AST forms.
+ *
+ * The increment is appended after the body, a missing condition becomes `true`,
+ * and an initializer wraps the loop in an outer block to preserve its scope.
  */
 StmtPtr Parser::forStatement() {
     consume(lexer::TokenType::LEFT_PARENTH, "Expect '(' after 'for'.");
@@ -170,7 +188,7 @@ StmtPtr Parser::forStatement() {
 }
 
 /**
- * @brief Parses `if`/`else` statement.
+ * @brief Parses a condition and branches; recursive statement parsing binds `else` to the nearest unmatched `if`.
  */
 StmtPtr Parser::ifStatement() {
     consume(lexer::TokenType::LEFT_PARENTH, "Expect '(' after 'if'.");
@@ -187,7 +205,7 @@ StmtPtr Parser::ifStatement() {
 }
 
 /**
- * @brief Parses `while` statement.
+ * @brief Parses the parenthesized loop condition and recursively parsed body.
  */
 StmtPtr Parser::whileStatement() {
     consume(lexer::TokenType::LEFT_PARENTH, "Expect '(' after 'while'.");
@@ -198,7 +216,7 @@ StmtPtr Parser::whileStatement() {
 }
 
 /**
- * @brief Parses `print` statement.
+ * @brief Parses the value expression printed at runtime and requires its terminator.
  */
 StmtPtr Parser::printStatement() {
     ExprPtr value = expression();
@@ -207,7 +225,7 @@ StmtPtr Parser::printStatement() {
 }
 
 /**
- * @brief Parses `return` statement with optional value expression.
+ * @brief Builds a return node with optional value; function-context rules belong to Resolver.
  */
 StmtPtr Parser::returnStatement() {
     lexer::Token keyword = previous();
@@ -220,7 +238,7 @@ StmtPtr Parser::returnStatement() {
 }
 
 /**
- * @brief Parses expression statement.
+ * @brief Parses an expression whose value is intentionally discarded by execution.
  */
 StmtPtr Parser::expressionStatement() {
     ExprPtr expr = expression();
@@ -229,7 +247,10 @@ StmtPtr Parser::expressionStatement() {
 }
 
 /**
- * @brief Parses brace-delimited block body.
+ * @brief Parses declarations up to the matching closing brace after `{` was consumed.
+ *
+ * Each contained declaration has its own recovery boundary, so a malformed item
+ * does not necessarily discard the rest of the block.
  */
 std::vector<StmtPtr> Parser::block() {
     std::vector<StmtPtr> statements;
@@ -251,7 +272,11 @@ ExprPtr Parser::expression() {
 }
 
 /**
- * @brief Parses assignment expression.
+ * @brief Parses right-associative assignment and rewrites valid targets into AST nodes.
+ *
+ * Parsing the left side first lets the parser distinguish a variable assignment
+ * from a property update. Any other left expression is rejected here, before
+ * resolution or execution.
  */
 ExprPtr Parser::assignment() {
     ExprPtr expr = logicalOr();
@@ -277,7 +302,7 @@ ExprPtr Parser::assignment() {
 }
 
 /**
- * @brief Parses logical OR expression.
+ * @brief Builds a left-associated Logical tree so evaluation can skip the RHS when true.
  */
 ExprPtr Parser::logicalOr() {
     ExprPtr expr = logicalAnd();
@@ -292,7 +317,7 @@ ExprPtr Parser::logicalOr() {
 }
 
 /**
- * @brief Parses logical AND expression.
+ * @brief Builds a left-associated Logical tree so evaluation can skip the RHS when false.
  */
 ExprPtr Parser::logicalAnd() {
     ExprPtr expr = equality();
@@ -307,7 +332,7 @@ ExprPtr Parser::logicalAnd() {
 }
 
 /**
- * @brief Parses equality expression.
+ * @brief Parses equality operators above comparison precedence and folds chains left-to-right.
  */
 ExprPtr Parser::equality() {
     ExprPtr expr = comparison();
@@ -322,7 +347,7 @@ ExprPtr Parser::equality() {
 }
 
 /**
- * @brief Parses comparison expression.
+ * @brief Parses relational operators above additive precedence and folds chains left-to-right.
  */
 ExprPtr Parser::comparison() {
     ExprPtr expr = term();
@@ -340,7 +365,7 @@ ExprPtr Parser::comparison() {
 }
 
 /**
- * @brief Parses additive expression (`+`, `-`).
+ * @brief Parses addition and subtraction above multiplication, folding left-to-right.
  */
 ExprPtr Parser::term() {
     ExprPtr expr = factor();
@@ -355,7 +380,7 @@ ExprPtr Parser::term() {
 }
 
 /**
- * @brief Parses multiplicative expression (`*`, `/`).
+ * @brief Parses multiplication and division above unary expressions, folding left-to-right.
  */
 ExprPtr Parser::factor() {
     ExprPtr expr = unary();
@@ -370,7 +395,7 @@ ExprPtr Parser::factor() {
 }
 
 /**
- * @brief Parses unary expression.
+ * @brief Parses recursive prefix operators; recursion permits chains such as `!!x`.
  */
 ExprPtr Parser::unary() {
     if (match({lexer::TokenType::BANG, lexer::TokenType::MINUS})) {
@@ -383,7 +408,7 @@ ExprPtr Parser::unary() {
 }
 
 /**
- * @brief Parses call/property-chaining expression suffixes.
+ * @brief Parses a primary followed by arbitrarily chained calls and property reads.
  */
 ExprPtr Parser::call() {
     ExprPtr expr = primary();
@@ -404,7 +429,10 @@ ExprPtr Parser::call() {
 }
 
 /**
- * @brief Parses argument list and call closing token.
+ * @brief Parses call arguments, retaining the closing parenthesis for diagnostics.
+ *
+ * The limit is checked before consuming each argument so the parser reports the
+ * first argument that exceeds the language's maximum of 255.
  */
 ExprPtr Parser::finishCall(ExprPtr callee) {
     std::vector<ExprPtr> arguments;
@@ -422,7 +450,7 @@ ExprPtr Parser::finishCall(ExprPtr callee) {
 }
 
 /**
- * @brief Parses primary expression forms (literals, identifiers, grouping, this/super).
+ * @brief Parses atomic expressions and the receiver/super forms used by methods.
  */
 ExprPtr Parser::primary() {
     if (match({lexer::TokenType::FALSE})) return std::make_unique<Literal>(false);
@@ -517,9 +545,10 @@ const lexer::Token& Parser::consume(lexer::TokenType type, const std::string& me
 }
 
 /**
- * @brief Panic-mode recovery after parse error.
+ * @brief Panic-mode recovery after a malformed declaration or statement.
  *
- * Skips tokens until likely declaration/statement boundary is found.
+ * Skips tokens until a semicolon or likely declaration/statement starter, allowing
+ * the outer parse loop to report later errors instead of abandoning the file.
  */
 void Parser::synchronize() {
     advance();
