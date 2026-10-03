@@ -30,7 +30,8 @@ set(RESOLVER_SOURCES
 )
 
 set(BYTECODE_SOURCES
-    # no cpp files yet: bytecode layer is currently compiler-only foundation
+    bytecode/src/Compiler.cpp
+    bytecode/src/VM.cpp
 )
 
 set(MAIN_SOURCES

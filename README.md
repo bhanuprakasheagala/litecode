@@ -27,12 +27,21 @@ If you are a beginner, this repo is meant to be read layer-by-layer.
 Read in this order:
 
 1. **Project overview (this file)**
-2. [Lexer Deep Dive](lexer/README.md)
-3. [Parser + AST Deep Dive](parser/README.md)
-4. [Resolver Deep Dive](resolver/README.md)
-5. [Interpreter Runtime Deep Dive](interpreter/README.md)
-6. [Testing Guide](tests/README.md)
-7. [Current status snapshot](docs/PROJECT_STATUS.md)
+2. [1-overview.md](docs/1-overview.md)
+3. [2-architecture.md](docs/2-architecture.md)
+4. [3-language-reference.md](docs/3-language-reference.md)
+5. [4-runtime-and-execution.md](docs/4-runtime-and-execution.md)
+6. [5-developer-guide.md](docs/5-developer-guide.md)
+7. [6-testing-validation.md](docs/6-testing-validation.md)
+8. [7-roadmap-status.md](docs/7-roadmap-status.md)
+
+Module-specific deep dives are still available in the per-module READMEs for source-level reference:
+
+- [Lexer Deep Dive](lexer/README.md)
+- [Parser + AST Deep Dive](parser/README.md)
+- [Resolver Deep Dive](resolver/README.md)
+- [Interpreter Runtime Deep Dive](interpreter/README.md)
+- [Testing Guide](tests/README.md)
 
 ---
 
@@ -92,11 +101,30 @@ For detailed semantics and examples, see [interpreter/README.md](interpreter/REA
 - CMake 3.16+
 - C++17 compiler
 
-### Build
+### Quick build commands
+
+Use the project wrapper script to avoid repeating the configure/build/test steps manually:
 
 ```bash
-cmake -S . -B build
-cmake --build build -j
+./scripts/build.sh default
+./scripts/build.sh default test
+./scripts/build.sh asan
+./scripts/build.sh asan test
+./scripts/build.sh leak
+./scripts/build.sh clean
+```
+
+The standard build writes to `build`, and the sanitizer build writes to `build-asan` in a separate directory so address-sanitizer artifacts do not mix with the normal build.
+
+`./scripts/build.sh leak` is an optional, tool-dependent memory check. On Linux it prefers `valgrind`; on macOS it prefers the native `leaks` tool. These are advisory diagnostics rather than a required product gate, and on this codebase they may report reference cycles in the runtime object graph rather than outright leaks. For routine development, the recommended cross-platform option is still the ASan build: `./scripts/build.sh asan test`.
+
+You can also use the equivalent CMake presets directly:
+
+```bash
+cmake --preset default
+cmake --build --preset default
+cmake --preset asan
+cmake --build --preset asan
 ```
 
 ### Run a script file
@@ -169,7 +197,7 @@ Current state aligns approximately through late `jlox` chapters:
 - resolver and lexical binding
 - classes and inheritance (`this`/`super`)
 
-Progress details: [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)
+Progress details: [docs/7-roadmap-status.md](docs/7-roadmap-status.md)
 
 ---
 
@@ -189,9 +217,10 @@ Progress details: [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)
 
 ### Mid-term
 - improve REPL memory strategy while preserving correctness
+- continue optional VM bootstrap work as a secondary implementation path
 
 ### Long-term
-- start C bytecode VM branch (stack, chunks, opcodes, VM loop)
+- evaluate whether the bytecode VM should remain a bootstrap branch or become a future alternative runtime
 
 ---
 
