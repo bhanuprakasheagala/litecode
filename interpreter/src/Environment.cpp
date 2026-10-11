@@ -8,18 +8,21 @@
 namespace interpreter {
 
 /**
- * @brief Builds root scope frame.
+ * @brief Builds the global root scope frame.
  */
 Environment::Environment() : enclosing(nullptr) {}
 
 /**
- * @brief Builds nested scope frame enclosing parent frame.
+ * @brief Builds a nested scope frame enclosing its parent scope.
  */
 Environment::Environment(std::shared_ptr<Environment> enclosing)
     : enclosing(std::move(enclosing)) {}
 
 /**
- * @brief Defines/overwrites variable in current frame.
+ * @brief Defines or replaces a binding in the current scope frame.
+ *
+ * Variables are stored by name in the active environment, which allows local
+ * shadowing while preserving outer bindings in the parent chain.
  */
 void Environment::define(const std::string& name, const Value& value) {
     values[name] = value;

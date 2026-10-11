@@ -16,12 +16,19 @@ class LoxInstance;
 /**
  * @file Environment.hpp
  * @brief Runtime value model, runtime error type, and lexical environment chain.
+ *
+ * The interpreter does not evaluate raw syntax directly. It converts the AST into
+ * a small runtime value system and then executes statements against a nested
+ * environment chain. This keeps evaluation semantics explicit and easy to follow.
  */
 
 /**
  * @brief Dynamically-typed runtime value used by interpreter evaluation.
  *
- * Supported runtime categories map directly to currently implemented language types.
+ * The value model is intentionally compact: it covers the language features the
+ * project currently implements without introducing a larger object graph or a
+ * custom GC. This is sufficient for numbers, strings, booleans, functions,
+ * classes, and instance objects while keeping the runtime easy to inspect.
  */
 using Value = std::variant<std::nullptr_t,
                            bool,
@@ -33,8 +40,9 @@ using Value = std::variant<std::nullptr_t,
 /**
  * @brief Runtime exception carrying source-token context.
  *
- * The interpreter catches this type to print consistent diagnostics:
- * message + source line reference.
+ * The interpreter catches this type to print consistent diagnostics: a message
+ * plus the offending token location. This makes runtime failures easier to trace
+ * to a specific expression or statement in user code.
  */
 class RuntimeError : public std::runtime_error {
 public:
@@ -56,10 +64,19 @@ private:
     lexer::Token token;
 };
 
+/**
+ * @brief Lexical environment chain used to model variable scope and closure capture.
+ *
+ * Each environment represents one scope frame. A nested block or function keeps a
+ * reference to its parent environment, so lookups fall back outward until the
+ * value is found. This is the mechanism behind closures and variable shadowing.
+ */
 class Environment : public std::enable_shared_from_this<Environment> {
 public:
     /**
      * @brief Creates root environment with no enclosing scope.
+     *
+     * The global environment is the base frame for all top-level declarations.
      */
     Environment();
     /**
@@ -73,11 +90,11 @@ public:
      */
     void define(const std::string& name, const Value& value);
     /**
-     * @brief Reads variable by name walking enclosing chain if needed.
+    * @brief Reads the nearest binding by name, searching enclosing scopes outward.
      */
     Value get(const lexer::Token& name) const;
     /**
-     * @brief Assigns existing variable by name walking enclosing chain.
+    * @brief Updates the nearest existing binding; assignment never creates a name.
      */
     void assign(const lexer::Token& name, const Value& value);
     /**
@@ -87,11 +104,12 @@ public:
      */
     Value getAt(int distance, const lexer::Token& name) const;
     /**
-     * @brief Reads variable from ancestor scope by string key (internal helper use).
+    * @brief Reads a binding at an exact scope distance using an internal string key.
+    * @details Resolver/environment mismatches throw `std::runtime_error` because no source token is available.
      */
     Value getAt(int distance, const std::string& name) const;
     /**
-     * @brief Assigns variable in ancestor scope at exact lexical distance.
+    * @brief Updates only the binding at the resolver-specified scope distance.
      */
     void assignAt(int distance, const lexer::Token& name, const Value& value);
 

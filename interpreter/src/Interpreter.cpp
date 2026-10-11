@@ -18,6 +18,13 @@ namespace interpreter {
 
 namespace {
 
+/**
+ * @brief Built-in clock function exposed to the global environment.
+ *
+ * The project includes a minimal native capability for testing and runtime
+ * experimentation. It keeps the host side simple: a small callable that returns
+ * wall-clock seconds without introducing a larger FFI or binding layer.
+ */
 class ClockCallable : public LoxCallable {
 public:
     int arity() const override { return 0; }
@@ -40,21 +47,28 @@ Interpreter::Interpreter()
 }
 
 /**
- * @brief Clears expression-distance cache produced by resolver.
+ * @brief Clears expression-distance cache produced by the resolver.
+ *
+ * Entries are keyed by AST expression address. The REPL therefore keeps parsed
+ * batches alive while their functions or resolution entries can still be used.
  */
 void Interpreter::clearResolutionCache() {
     locals.clear();
 }
 
 /**
- * @brief Stores lexical distance metadata for expression lookup optimization.
+ * @brief Stores the resolver's lexical depth for a stable AST expression address.
  */
 void Interpreter::resolve(const parser::Expr* expr, int depth) {
     locals[expr] = depth;
 }
 
 /**
- * @brief Interprets top-level statement list and handles runtime diagnostics.
+ * @brief Executes statements in order and converts uncaught control/runtime failures into diagnostics.
+ *
+ * A runtime error ends the current batch; mutations already made to the
+ * environment are not rolled back. Unexpected standard exceptions are caught at
+ * this host boundary and also mark the run failed.
  */
 void Interpreter::interpret(const std::vector<parser::StmtPtr>& statements) {
     hadError = false;
@@ -73,7 +87,11 @@ void Interpreter::interpret(const std::vector<parser::StmtPtr>& statements) {
 }
 
 /**
- * @brief Executes one statement node.
+ * @brief Dispatches on statement type and applies its runtime semantics.
+ *
+ * Class declarations reserve the class name before creating methods, allowing
+ * method closures to refer back to it. Subclasses add a temporary `super` frame
+ * while methods are created, matching the scope distances recorded by Resolver.
  */
 void Interpreter::execute(const parser::Stmt& stmt) {
     if (auto expressionStmt = dynamic_cast<const parser::ExpressionStmt*>(&stmt)) {
@@ -172,7 +190,7 @@ void Interpreter::execute(const parser::Stmt& stmt) {
 }
 
 /**
- * @brief Executes statement block in temporary nested environment.
+ * @brief Executes statements in a fresh lexical frame and restores the prior frame on every exit.
  */
 void Interpreter::executeBlock(const std::vector<parser::StmtPtr>& statements,
                                std::shared_ptr<Environment> blockEnvironment) {
@@ -190,7 +208,11 @@ void Interpreter::executeBlock(const std::vector<parser::StmtPtr>& statements,
 }
 
 /**
- * @brief Evaluates one expression subtree and returns runtime value.
+ * @brief Evaluates an expression tree and returns its value in the active environment.
+ *
+ * Binary operands are evaluated left-to-right; logical nodes are handled
+ * separately to preserve short-circuiting. Runtime type checks attach errors to
+ * the operator or call/property token that introduced the operation.
  */
 Value Interpreter::evaluate(const parser::Expr& expr) {
     if (auto literal = dynamic_cast<const parser::Literal*>(&expr)) {
@@ -373,7 +395,10 @@ Value Interpreter::evaluate(const parser::Expr& expr) {
 }
 
 /**
- * @brief Resolves variable by lexical distance when available, global fallback otherwise.
+ * @brief Uses resolver distance for locals and the global frame for unresolved names.
+ *
+ * The resolver omits globals from its local scope stack, making absence from
+ * `locals` an intentional signal to query `globals`, not a failed resolution.
  */
 Value Interpreter::lookUpVariable(const lexer::Token& name, const parser::Expr& expr) {
     auto local = locals.find(&expr);
@@ -384,7 +409,7 @@ Value Interpreter::lookUpVariable(const lexer::Token& name, const parser::Expr& 
 }
 
 /**
- * @brief Computes language truthiness semantics.
+ * @brief Applies Lox truthiness: only nil and false are false.
  */
 bool Interpreter::isTruthy(const Value& value) const {
     if (std::holds_alternative<std::nullptr_t>(value)) return false;
@@ -393,7 +418,9 @@ bool Interpreter::isTruthy(const Value& value) const {
 }
 
 /**
- * @brief Computes language equality semantics.
+ * @brief Compares nil, booleans, numbers, and strings using scalar value equality.
+ *
+ * Function and instance equality is not implemented by this tree-walk runtime.
  */
 bool Interpreter::isEqual(const Value& left, const Value& right) const {
     if (left.index() != right.index()) return false;
@@ -405,7 +432,10 @@ bool Interpreter::isEqual(const Value& left, const Value& right) const {
 }
 
 /**
- * @brief Converts runtime value to user-visible string representation.
+ * @brief Formats runtime values for `print` and callable/object display.
+ *
+ * Numeric output uses up to 15 significant digits and removes trailing fractional
+ * zeroes so integral values do not print with a redundant decimal suffix.
  */
 std::string Interpreter::stringify(const Value& value) const {
     if (std::holds_alternative<std::nullptr_t>(value)) return "nil";
@@ -430,7 +460,7 @@ std::string Interpreter::stringify(const Value& value) const {
 }
 
 /**
- * @brief Verifies unary numeric operand requirement.
+ * @brief Enforces the numeric type requirement for a unary arithmetic operator.
  */
 void Interpreter::checkNumberOperand(const lexer::Token& op, const Value& operand) const {
     if (std::holds_alternative<double>(operand)) return;
@@ -438,7 +468,7 @@ void Interpreter::checkNumberOperand(const lexer::Token& op, const Value& operan
 }
 
 /**
- * @brief Verifies binary numeric operand requirement.
+ * @brief Enforces that both operands of a numeric binary operator are numbers.
  */
 void Interpreter::checkNumberOperands(const lexer::Token& op,
                                       const Value& left,
@@ -448,7 +478,7 @@ void Interpreter::checkNumberOperands(const lexer::Token& op,
 }
 
 /**
- * @brief Emits runtime error in consistent user-facing format.
+ * @brief Marks the current interpretation failed and formats its source-aware diagnostic.
  */
 void Interpreter::runtimeError(const RuntimeError& error) {
     hadError = true;

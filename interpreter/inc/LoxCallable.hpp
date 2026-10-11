@@ -21,7 +21,8 @@ class ReturnSignal;
 /**
  * @brief Runtime callable interface for anything that can be invoked with `()`.
  *
- * Both user-defined functions and classes implement this interface.
+ * Both user-defined functions and classes implement this interface. The
+ * interpreter evaluates arguments and validates arity before calling this API.
  */
 class LoxCallable {
 public:
@@ -46,10 +47,13 @@ public:
 class LoxFunction : public LoxCallable {
 public:
     /**
-     * @brief Creates runtime function object.
+    * @brief Creates runtime function object backed by an AST declaration and closure.
      * @param declaration Function AST declaration pointer.
      * @param closure Lexical closure environment captured at declaration time.
      * @param isInitializer Whether this function is class initializer (`init`).
+    *
+    * The declaration pointer is non-owning; the AST must outlive the function.
+    * The REPL satisfies this by retaining successful AST batches until reset.
      */
     LoxFunction(const parser::FunctionStmt* declaration,
                 std::shared_ptr<Environment> closure,
@@ -59,7 +63,7 @@ public:
     Value call(Interpreter& interpreter, const std::vector<Value>& arguments) override;
     std::string toString() const override;
     /**
-     * @brief Binds method receiver (`this`) and returns bound callable.
+    * @brief Captures a method receiver in a child closure frame and returns a bound callable.
      */
     std::shared_ptr<LoxFunction> bind(const std::shared_ptr<class LoxInstance>& instance) const;
 
@@ -75,7 +79,7 @@ private:
 class LoxClass : public LoxCallable, public std::enable_shared_from_this<LoxClass> {
 public:
     /**
-     * @brief Creates class object with optional superclass and method table.
+    * @brief Creates class metadata; method lookup consults this table before its superclass.
      */
     LoxClass(std::string name,
              std::shared_ptr<LoxClass> superclass,
@@ -86,7 +90,7 @@ public:
     std::string toString() const override;
 
     /**
-     * @brief Resolves method by name with superclass fallback.
+    * @brief Resolves a method by checking this class before its superclass chain.
      */
     std::shared_ptr<LoxFunction> findMethod(const std::string& name) const;
 
@@ -107,7 +111,7 @@ public:
     explicit LoxInstance(std::shared_ptr<LoxClass> klass);
 
     /**
-     * @brief Reads field or resolves/binds method.
+    * @brief Reads an own field first, otherwise returns a method bound to this instance.
      */
     Value get(const lexer::Token& name);
     /**

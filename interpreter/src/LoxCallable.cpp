@@ -10,7 +10,10 @@
 namespace interpreter {
 
 /**
- * @brief Builds function object from declaration and closure.
+ * @brief Creates a runtime function object with its defining closure.
+ *
+ * The function captures the lexical environment when it is declared, which is how
+ * closures preserve access to outer variables after the surrounding scope exits.
  */
 LoxFunction::LoxFunction(const parser::FunctionStmt* declaration,
                          std::shared_ptr<Environment> closure,
@@ -25,7 +28,12 @@ int LoxFunction::arity() const {
 }
 
 /**
- * @brief Invokes function with new call frame and handles returns.
+ * @brief Invokes the function in a fresh call frame and propagates `return`.
+ *
+ * The call creates a child environment for the parameters and local variables,
+ * then reuses the closure as the parent scope so captured variables remain
+ * visible. A `ReturnSignal` unwinds the call stack, and initializer functions
+ * return the bound instance instead of an arbitrary value.
  */
 Value LoxFunction::call(Interpreter& interpreter, const std::vector<Value>& arguments) {
     auto environment = std::make_shared<Environment>(closure);

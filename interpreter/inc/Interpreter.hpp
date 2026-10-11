@@ -47,8 +47,11 @@ public:
     Interpreter();
 
     /**
-     * @brief Executes a full program statement list.
+    * @brief Executes a full program or REPL batch and records runtime failure state.
      * @param statements Parsed and resolved statement list.
+    *
+    * Return signals are valid only inside function calls; an escaping signal is
+    * reported as a top-level runtime error. Runtime errors stop the current batch.
      */
     void interpret(const std::vector<parser::StmtPtr>& statements);
     /**
@@ -56,16 +59,22 @@ public:
      */
     bool hadRuntimeError() const { return hadError; }
     /**
-     * @brief Clears expression->distance metadata cache.
+    * @brief Clears resolver metadata keyed by AST expression address.
+    *
+    * Call this before reusing an interpreter with a different AST lifetime; the
+    * resolver repopulates the mapping before that AST is executed.
      */
     void clearResolutionCache();
     /**
-     * @brief Executes statements under a temporary block environment.
+    * @brief Executes statements under a temporary lexical environment.
+    *
+    * The previous environment is restored both after normal completion and when
+    * a return signal or runtime exception unwinds through the block.
      */
     void executeBlock(const std::vector<parser::StmtPtr>& statements,
                       std::shared_ptr<Environment> blockEnvironment);
     /**
-     * @brief Records lexical distance for one expression node (resolver output).
+    * @brief Records the resolver's lexical depth for a stable AST expression address.
      */
     void resolve(const parser::Expr* expr, int depth);
 
@@ -79,14 +88,24 @@ private:
     /// @{
     void execute(const parser::Stmt& stmt);
 
+    /**
+     * @brief Evaluates an AST expression according to runtime operator and scope rules.
+     *
+     * Logical operators short-circuit, calls evaluate the callee and arguments before
+     * checking callable type/arity, and `super` combines resolver depth with the
+     * adjacent `this` binding to produce a bound superclass method.
+     */
     Value evaluate(const parser::Expr& expr);
     Value lookUpVariable(const lexer::Token& name, const parser::Expr& expr);
     /// @}
 
     /// @name Runtime semantic helpers
     /// @{
+    /** @brief Applies Lox truthiness: only nil and false are false. */
     bool isTruthy(const Value& value) const;
+    /** @brief Compares supported scalar values; callable and instance identity equality is not implemented. */
     bool isEqual(const Value& left, const Value& right) const;
+    /** @brief Formats nil, booleans, values, and runtime objects for user-visible output. */
     std::string stringify(const Value& value) const;
     /// @}
 
