@@ -70,18 +70,27 @@ private:
 
     /// @name Recursive resolve entry points
     /// @{
+    /** @brief Recursively visits one statement and manages scopes introduced by it. */
     void resolve(const parser::Stmt& stmt);
+    /** @brief Recursively visits expressions and records lexical bindings on variable nodes. */
     void resolve(const parser::Expr& expr);
+    /** @brief Resolves parameters/body under a function context, restoring the enclosing context afterward. */
     void resolveFunction(const parser::FunctionStmt& function, FunctionType type);
     /// @}
 
     /// @name Scope-stack management helpers
     /// @{
+    /** @brief Adds a local scope frame; its position determines runtime lexical distance. */
     void beginScope();
+    /** @brief Removes the innermost frame after all expressions in that scope are resolved. */
     void endScope();
+    /** @brief Marks a local name present but unreadable during its own initializer. */
     void declare(const lexer::Token& name);
+    /** @brief Marks a declared local readable after its initializer has been resolved. */
     void define(const lexer::Token& name);
+    /** @brief Records an expression's lexical depth, leaving absent names for global lookup. */
     void resolveLocal(const parser::Expr& expr, const lexer::Token& name);
+    /** @brief Reports a semantic error while allowing resolution to continue. */
     void error(const lexer::Token& token, const std::string& message);
     /// @}
 };

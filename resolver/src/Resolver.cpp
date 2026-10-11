@@ -20,7 +20,10 @@ Resolver::Resolver(interpreter::Interpreter& interpreter)
       currentClass(ClassType::NONE) {}
 
 /**
- * @brief Resolves each top-level statement in order.
+ * @brief Resolves top-level statements in source order using one resolver state.
+ *
+ * Top-level names are intentionally not added to the local scope stack; references
+ * with no recorded local depth are looked up in the interpreter's global frame.
  */
 void Resolver::resolve(const std::vector<parser::StmtPtr>& statements) {
     for (const auto& stmt : statements) {
@@ -29,7 +32,11 @@ void Resolver::resolve(const std::vector<parser::StmtPtr>& statements) {
 }
 
 /**
- * @brief Resolves one statement node and nested children.
+ * @brief Resolves a statement tree while applying its declaration and scope rules.
+ *
+ * Locals are declared before their initializer is visited and defined afterward,
+ * which detects self-reads. Class resolution creates `super` before `this`, so a
+ * method's resolver distances match the runtime environment chain.
  */
 void Resolver::resolve(const parser::Stmt& stmt) {
     if (auto expressionStmt = dynamic_cast<const parser::ExpressionStmt*>(&stmt)) {
@@ -128,7 +135,11 @@ void Resolver::resolve(const parser::Stmt& stmt) {
 }
 
 /**
- * @brief Resolves one expression node and nested children.
+ * @brief Validates expression context and annotates local variable references.
+ *
+ * Traversal visits assignment values as well as targets, and rejects `this` or
+ * `super` when their class context is invalid. Local references receive lexical
+ * distances; unresolved names are intentionally left for global lookup.
  */
 void Resolver::resolve(const parser::Expr& expr) {
     if (auto variable = dynamic_cast<const parser::Variable*>(&expr)) {
@@ -210,7 +221,10 @@ void Resolver::resolve(const parser::Expr& expr) {
 }
 
 /**
- * @brief Resolves function body in isolated scope and function context.
+ * @brief Resolves parameters and body in a call-frame scope under the given function kind.
+ *
+ * The prior function context is restored after resolution so nested declarations
+ * do not change the legality rules for the surrounding function or method.
  */
 void Resolver::resolveFunction(const parser::FunctionStmt& function, FunctionType type) {
     FunctionType enclosingFunction = currentFunction;
@@ -242,7 +256,10 @@ void Resolver::endScope() {
 }
 
 /**
- * @brief Marks variable name as declared but not yet defined.
+ * @brief Adds a local binding in the unreadable state before its initializer.
+ *
+ * The boolean state distinguishes a declaration from a completed definition and
+ * is used to reject reads such as `var value = value;` within the same scope.
  */
 void Resolver::declare(const lexer::Token& name) {
     if (scopes.empty()) return;
@@ -264,7 +281,11 @@ void Resolver::define(const lexer::Token& name) {
 }
 
 /**
- * @brief Emits lexical distance metadata for variable expression use.
+ * @brief Finds the nearest local binding and sends its scope distance to the interpreter.
+ *
+ * The key is the address of the AST expression, not its token. Consequently the
+ * AST nodes must remain alive and unmoved while the interpreter uses this metadata.
+ * Names absent from the resolver's local scopes are intentionally left to global lookup.
  */
 void Resolver::resolveLocal(const parser::Expr& expr, const lexer::Token& name) {
     for (int i = static_cast<int>(scopes.size()) - 1; i >= 0; --i) {
@@ -277,7 +298,10 @@ void Resolver::resolveLocal(const parser::Expr& expr, const lexer::Token& name) 
 }
 
 /**
- * @brief Reports resolver semantic diagnostic.
+ * @brief Records a semantic failure and emits it using the selected diagnostic format.
+ *
+ * Resolution continues after reporting so one pass can expose multiple independent
+ * static errors; the driver prevents execution when `hadError()` is true.
  */
 void Resolver::error(const lexer::Token& token, const std::string& message) {
     hasError = true;
