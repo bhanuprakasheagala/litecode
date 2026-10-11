@@ -78,12 +78,12 @@ namespace lexer {
             const int line;
 
             /**
-             * @brief Trims leading/trailing spaces from debug-printed lexeme text.
+             * @brief Trims leading/trailing whitespace from the displayed lexeme.
              * @param str Input string.
              * @return Trimmed view copied into std::string.
              *
-             * Note for beginners:
-             * this is a display helper only; it does not mutate stored token data.
+             * This affects debug formatting only; the immutable source lexeme used
+             * by parsing and diagnostics is left unchanged.
              */
             static std::string trim(const std::string& str) {
                 auto start = std::find_if_not(str.begin(), str.end(), ::isspace);

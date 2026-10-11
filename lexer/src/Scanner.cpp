@@ -33,32 +33,24 @@ namespace lexer {
         return tokens;
     }
 
-    /**
-     * @brief Consumes and returns current character.
-     */
+    /** @brief Returns and consumes the byte at `current`; the caller guards end-of-input. */
     char Scanner::advance() {
         return source[current++];
     }
 
-    /**
-     * @brief Peeks current character without consuming.
-     */
+    /** @brief Returns the current byte without advancing the cursor. */
     char Scanner::peek() const {
         if (isAtEnd()) return '\0';
         return source[current];
     }
 
-    /**
-     * @brief Peeks one character ahead without consuming.
-     */
+    /** @brief Returns the following byte for lookahead, using '\0' as the boundary sentinel. */
     char Scanner::peekNext() const {
         if (current + 1 >= source.length()) return '\0';
         return source[current + 1];
     }
 
-    /**
-     * @brief Conditionally consumes expected character.
-     */
+    /** @brief Performs one-character lookahead and advances only on a match. */
     bool Scanner::match(char expected) {
         if (isAtEnd()) return false;
         if (source[current] != expected) return false;
@@ -66,15 +58,17 @@ namespace lexer {
         return true;
     }
 
-    /**
-     * @brief Checks whether scanner cursor has reached end of source.
-     */
+    /** @brief Tests the cursor boundary used by every scanner loop. */
     bool Scanner::isAtEnd() const {
         return current >= source.length();
     }
 
     /**
-     * @brief Skips spaces, tabs, newlines, and line comments.
+     * @brief Consumes whitespace and `//` comments before the next token.
+     *
+     * Line breaks update `line`; a slash not beginning a comment is left for
+     * `scanToken()` so it can become a SLASH token. The routine stops with the
+     * cursor positioned at the first non-trivia byte.
      */
     void Scanner::skipWhitespace() {
         while (!isAtEnd()) {
@@ -103,7 +97,11 @@ namespace lexer {
     }
 
     /**
-     * @brief Scans one token at current cursor position.
+     * @brief Scans one token after discarding preceding trivia.
+     *
+     * Invalid characters are reported and omitted from the token stream, allowing
+     * scanning to continue; comments likewise produce no token. End-of-input is
+     * represented by the sentinel added by `scanTokens()`.
      */
     std::optional<Token> Scanner::scanToken() {
         skipWhitespace();
@@ -148,7 +146,10 @@ namespace lexer {
         }
     }
     /**
-     * @brief Scans numeric literal with optional fractional part.
+     * @brief Scans the numeric literal whose first digit was consumed by dispatch.
+     *
+     * The scanner preserves the spelling as the token literal; conversion to a
+     * numeric AST value happens later in the parser.
      */
     Token Scanner::number() {
         auto isDigit = [](char ch) {
@@ -171,7 +172,10 @@ namespace lexer {
         return makeToken(TokenType::NUMBER, literal);
     }
     /**
-     * @brief Scans string literal between double quotes.
+     * @brief Scans through the closing quote while counting embedded newlines.
+     *
+     * On missing closing quote, reports the error and emits no token. The caller
+     * has already consumed the opening quote.
      */
     std::optional<Token> Scanner::string() {
         size_t literalStart = current; // skip opening quote
@@ -190,7 +194,10 @@ namespace lexer {
         return makeToken(TokenType::STRING, literal);
     }
     /**
-     * @brief Scans identifier and upgrades to keyword token when matched.
+     * @brief Consumes ASCII letters, digits, and underscores, then checks keywords.
+     *
+     * Keyword matching uses the complete lexeme, so keyword prefixes remain
+     * ordinary identifiers (for example, `className`).
      */
     Token Scanner::identifier() {
         while (std::isalnum(static_cast<unsigned char>(peek())) || peek() == '_') advance();
@@ -198,9 +205,7 @@ namespace lexer {
         TokenType type = Keywords.count(text) ? Keywords.at(text) : TokenType::IDENTIFIER;
         return makeToken(type);
     }
-    /**
-     * @brief Builds token from currently tracked lexeme range.
-     */
+    /** @brief Copies the active source slice and attaches its type, literal, and current line. */
     Token Scanner::makeToken(TokenType type, const std::string& literal) {
         std::string lexeme = source.substr(start, current - start); // full token text
         return Token(type, lexeme, literal, line);
