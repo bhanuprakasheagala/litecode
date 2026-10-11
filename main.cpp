@@ -13,6 +13,8 @@
 #include "interpreter/inc/HostConfig.hpp"
 #include "interpreter/inc/Interpreter.hpp"
 #include "resolver/inc/Resolver.hpp"
+#include "bytecode/inc/Compiler.hpp"
+#include "bytecode/inc/VM.hpp"
 
 /**
  * @file main.cpp
@@ -48,7 +50,10 @@ namespace lexer {
             }
             ~litecode(){}
             /**
-             * @brief Entrypoint for selecting file mode or REPL mode.
+             * @brief Selects file or interactive mode and contains unexpected host exceptions.
+             *
+             * Argument errors exit during construction; this method handles only
+             * successfully parsed options and delegates mode-specific status policy.
              */
             void start() {
                 try{
@@ -78,7 +83,9 @@ namespace lexer {
             /**
              * @brief Reinitializes interpreter and drops retained REPL AST batches.
              *
-             * This is used by explicit `.reset` command and optional auto-reset policy.
+             * Runtime functions retain non-owning pointers into their declarations,
+             * so clearing the batches and replacing the interpreter together ends
+             * the old session without leaving callable objects pointing at dead ASTs.
              */
             void resetReplState(bool announce = true) {
                 interpreter = ::interpreter::Interpreter();
@@ -89,8 +96,12 @@ namespace lexer {
             }
 
             /**
-             * @brief Parses optional REPL auto-reset threshold from environment.
-             * @return Number of successful inputs before reset, or 0 when disabled/invalid.
+             * @brief Chooses the configured successful-input count before automatic reset.
+             *
+             * A nonzero CLI value takes precedence; otherwise the environment helper
+             * supplies the fallback. Zero disables this reset policy.
+             *
+             * @return Number of successful inputs before reset, or 0 when disabled.
              */
             static size_t replAutoResetThreshold() {
                 size_t envValue = ::litecode::parsePositiveSizeEnv("LITECODE_REPL_AUTO_RESET_EVERY", 0, 1024);
@@ -101,7 +112,11 @@ namespace lexer {
             }
 
             /**
-             * @brief Parses maximum retained REPL AST batches before safety reset.
+             * @brief Reads the environment-configured retained-AST batch limit.
+             *
+             * Reaching the limit causes a session reset before the next tree-walk
+             * batch is retained, bounding AST memory while preserving valid closure
+             * declaration pointers within the active session.
              * @return Maximum number of kept program batches.
              */
             static size_t replMaxBatches() {
@@ -109,13 +124,17 @@ namespace lexer {
                 return envValue;
             }
 
+            /** @brief Prints the command text shared with the REPL help formatter. */
             static void printReplHelp() {
                 std::cout << ::litecode::replHelpText();
             }
 
             /**
-             * @brief Executes script from file path.
+             * @brief Reads and executes a script, mapping front-end/runtime failures to process exit codes.
              * @param path Script file path.
+             *
+             * File-open/read failures use the input-error status; scan, parse,
+             * resolve, and runtime failures use the script-error status.
              */
             void runFile(const std::string& path) {
                 try {
@@ -128,7 +147,7 @@ namespace lexer {
                     buffer << file.rdbuf();
                     std::string content = buffer.str();
 
-                    run(content);
+                    run(content, options.useBytecode);
 
                     if(hadError)
                         exit(65);
@@ -140,11 +159,14 @@ namespace lexer {
             }
 
             /**
-             * @brief Interactive prompt loop.
+             * @brief Reads one source batch per prompt and preserves tree-walk session state.
              *
              * Supports:
              * - `.reset` command to clear session state.
              * - optional auto-reset via `LITECODE_REPL_AUTO_RESET_EVERY`.
+             *
+             * Only successful executions advance the automatic-reset counter; a
+             * failed batch leaves the counter unchanged and does not terminate the REPL.
              */
             void runPrompt(){
                 try {
@@ -179,7 +201,7 @@ namespace lexer {
                             break;
                         }
 
-                        run(inputline);
+                        run(inputline, options.useBytecode);
                         if (!hadError) {
                             ++successfulRuns;
                             if (autoResetEvery > 0 && successfulRuns >= autoResetEvery) {
@@ -196,16 +218,16 @@ namespace lexer {
             }
 
             /**
-             * @brief Executes complete frontend/runtime pipeline for one source chunk.
+             * @brief Runs one source batch through scanning, parsing, then a selected backend.
              * @param inputSource Raw Litecode source text.
+             * @param vmMode Selects the experimental compiler/VM path after parsing.
              *
-             * Pipeline:
-             * 1. Scanner
-             * 2. Parser
-             * 3. Resolver
-             * 4. Interpreter
+             * Tree-walk mode resolves and executes against the persistent interpreter,
+             * retaining the AST so closure declarations stay alive. VM mode compiles
+             * and executes immediately with a fresh VM, and currently bypasses the
+             * resolver and the tree-walk batch-retention path.
              */
-            void run(const std::string& inputSource) {
+            void run(const std::string& inputSource, bool vmMode = false) {
                 ErrorReporter::reset();
 
                 // 1. Lexing
@@ -228,6 +250,21 @@ namespace lexer {
                 std::vector<parser::StmtPtr> statements = parser.parse();
                 if (parser.hadError()) {
                     hadError = true;
+                    return;
+                }
+
+                if (vmMode) {
+                    // The VM is an alternate backend over the shared AST. It does
+                    // not use the resolver or the persistent tree-walk interpreter;
+                    // keep this boundary explicit until both backends share a
+                    // resolved intermediate representation and equivalent state model.
+                    bytecode::Compiler compiler;
+                    bytecode::Chunk chunk = compiler.compileProgram(statements);
+                    std::ostringstream vmOut;
+                    bytecode::VirtualMachine vm;
+                    bytecode::InterpretStatus status = vm.interpret(chunk, vmOut);
+                    std::cout << vmOut.str();
+                    hadError = status != bytecode::InterpretStatus::Ok;
                     return;
                 }
 
@@ -273,8 +310,8 @@ namespace lexer {
 
 int main(int argc, char* argv[]) {
     /**
-     * Process-level entrypoint:
-     * construct CLI driver and delegate all mode-specific handling to it.
+    * Process boundary: construct the CLI host, then let it select and run the
+    * requested mode. Script-specific exit codes are produced inside the host.
      */
     lexer::litecode lc(argc, argv);
     lc.start();
