@@ -1,0 +1,8 @@
+class C {
+  init(v) {
+    this.v = v;
+    return;
+  }
+  get() { return this.v; }
+}
+print C(7).get();

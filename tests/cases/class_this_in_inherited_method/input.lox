@@ -1,0 +1,6 @@
+class A {
+  init(v) { this.v = v; }
+  get() { return this.v; }
+}
+class B < A {}
+print B(8).get();

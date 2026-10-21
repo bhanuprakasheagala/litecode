@@ -1,0 +1,5 @@
+class A {}
+class B < A {
+  test() { return super.nope(); }
+}
+print B().test();

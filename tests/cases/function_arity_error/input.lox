@@ -1,0 +1,2 @@
+fun one(a) { return a; }
+print one();

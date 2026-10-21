@@ -1,0 +1,5 @@
+class C {
+  init() {
+    return 1;
+  }
+}
