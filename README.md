@@ -41,7 +41,6 @@ Module-specific deep dives are still available in the per-module READMEs for sou
 - [Parser + AST Deep Dive](parser/README.md)
 - [Resolver Deep Dive](resolver/README.md)
 - [Interpreter Runtime Deep Dive](interpreter/README.md)
-- [Testing Guide](tests/README.md)
 
 ---
 
@@ -177,7 +176,7 @@ ctest --test-dir build --output-on-failure
 ./scripts/regression_smoke.sh ./build/litecode
 ```
 
-Detailed test documentation: [tests/README.md](tests/README.md)
+Detailed test documentation: [Testing and Validation](docs/6-testing-validation.md)
 
 ---
 
