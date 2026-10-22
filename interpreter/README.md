@@ -206,7 +206,7 @@ This enables persistent definitions in REPL but can increase memory usage over v
 - Lexer: [../lexer/README.md](../lexer/README.md)
 - Parser: [../parser/README.md](../parser/README.md)
 - Resolver: [../resolver/README.md](../resolver/README.md)
-- Tests: [../tests/README.md](../tests/README.md)
+- Tests: [Testing and Validation](../docs/6-testing-validation.md)
 
 ---
 
