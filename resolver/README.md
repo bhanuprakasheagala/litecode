@@ -134,7 +134,7 @@ This separation reduces runtime surprises and keeps interpreter logic simpler.
 
 - AST source: [../parser/README.md](../parser/README.md)
 - Runtime consumer: [../interpreter/README.md](../interpreter/README.md)
-- Integration checks: [../tests/README.md](../tests/README.md)
+- Integration checks: [Testing and Validation](../docs/6-testing-validation.md)
 
 ---
 
