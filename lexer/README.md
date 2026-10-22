@@ -191,4 +191,4 @@ So scanner bugs can manifest later as parser confusion, which is why this module
 
 - Project overview: [../README.md](../README.md)
 - Parser details: [../parser/README.md](../parser/README.md)
-- Testing details: [../tests/README.md](../tests/README.md)
+- Testing details: [Testing and Validation](../docs/6-testing-validation.md)
