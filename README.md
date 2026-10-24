@@ -144,21 +144,75 @@ Use the interactive prompt when you want to type Lox code line by line:
 ./build/litecode
 ```
 
-REPL commands:
-- `.help` shows available commands
-- `.reset` clears the current interpreter state
-- `.quit` exits the prompt
+The REPL keeps interpreter state between inputs, so definitions from one line can
+be used on later lines. For example:
 
-REPL helper command:
-- `.reset` clears current REPL state (variables/functions/classes) and frees retained session AST state.
-- optional env knob: `LITECODE_REPL_AUTO_RESET_EVERY=<N>` auto-resets REPL state after every `N` successful inputs (default disabled).
+```text
+> var name = "Ada";
+> print name;
+Ada
+> fun greet() { print "Hello, " + name; }
+> greet();
+Hello, Ada
+```
+
+Use the built-in commands to manage the interactive session:
+
+- `.help` lists the available commands.
+- `.reset` clears variables, functions, classes, and other interpreter state.
+- `.quit` exits the prompt.
+
+For example, `.reset` starts a fresh session; after the reset, `name` and
+`greet` from the example above are no longer defined:
+
+```text
+> .reset
+State reset.
+> var name = "Grace";
+> print name;
+Grace
+> .quit
+```
+
+For longer sessions, you can also request an automatic reset after a number of
+successful input batches. The counter starts again after each reset, and failed
+inputs do not count. Automatic reset is disabled by default:
+
+```bash
+./build/litecode --repl-auto-reset=3
+# Or configure it through the environment:
+LITECODE_REPL_AUTO_RESET_EVERY=3 ./build/litecode
+```
 
 ### Debug toggles
+
+These switches print intermediate representations to help you understand or
+debug the interpreter pipeline:
+
+- Token output shows the tokens produced by the scanner.
+- AST output shows the parsed program structure before resolution and execution.
+
+Enable either or both for a script with command-line flags:
+
+```bash
+./build/litecode --dump-tokens sample.lox
+./build/litecode --dump-ast sample.lox
+./build/litecode --dump-tokens --dump-ast sample.lox
+```
+
+The equivalent environment toggles are useful when you want to enable output
+without changing the command's arguments:
 
 ```bash
 LITECODE_DUMP_TOKENS=1 ./build/litecode sample.lox
 LITECODE_DUMP_AST=1 ./build/litecode sample.lox
 ```
+
+The environment toggles are enabled by any value other than the literal `0`
+(for example, `1`) and disabled when set to `0` or left unset. These options
+also work in the REPL, where they print output for each input batch. Debug
+output goes to standard output alongside the program's output; it does not
+change the program's behavior.
 
 ---
 
